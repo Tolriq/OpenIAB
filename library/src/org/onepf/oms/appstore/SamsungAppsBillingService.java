@@ -24,6 +24,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.onepf.oms.AppstoreInAppBillingService;
@@ -118,8 +121,8 @@ public class SamsungAppsBillingService implements AppstoreInAppBillingService {
     // ========================================================================
     // define request code for IAPService.
     // ========================================================================
-    public static final int REQUEST_CODE_IS_IAP_PAYMENT            = 1;
-    public static final int REQUEST_CODE_IS_ACCOUNT_CERTIFICATION  = 899;
+    public static final int REQUEST_CODE_IS_IAP_PAYMENT = 1;
+    public static final int REQUEST_CODE_IS_ACCOUNT_CERTIFICATION = 899;
 
     // ========================================================================
     // define status code passed to 3rd party application
@@ -157,6 +160,32 @@ public class SamsungAppsBillingService implements AppstoreInAppBillingService {
 
     @Override
     public void startSetup(final OnIabSetupFinishedListener listener) {
+        // Make sure that Samsung IAP service is installed.
+        try {
+            PackageManager pm = activity.getPackageManager();
+            try {
+                pm.getApplicationInfo(SamsungApps.IAP_PACKAGE_NAME, PackageManager.GET_META_DATA);
+            } catch (PackageManager.NameNotFoundException e) {
+                Intent intent = new Intent();
+                intent.setData(Uri.parse("samsungapps://ProductDetail/"
+                        + SamsungApps.IAP_PACKAGE_NAME));
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1) {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | 32);
+                } else {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                }
+                activity.startActivity(intent);
+                Log.e(TAG, "Confirming Samsung IAP service exists: " + e.getMessage());
+            }
+        } catch (Exception e1) {
+            Log.e(TAG, "Confirming Samsung IAP service exists: " + e1.getMessage());
+            listener.onIabSetupFinished(new IabResult(
+                    IabHelper.BILLING_RESPONSE_RESULT_BILLING_UNAVAILABLE,
+                    "Couldn't find Samsung IAP service on device"));
+            return;
+        }
+
+        // If it got this far then IAP service is installed. Continue with setup.
         this.setupListener = listener;
 
         ComponentName com = new ComponentName(SamsungApps.IAP_PACKAGE_NAME, ACCOUNT_ACTIVITY_NAME);
@@ -305,7 +334,7 @@ public class SamsungAppsBillingService implements AppstoreInAppBillingService {
                 try {
                     JSONObject purchaseJson = new JSONObject(purchaseData);
 
-					purchase.setOriginalJson(purchaseData);
+                    purchase.setOriginalJson(purchaseData);
                     purchase.setOrderId(purchaseJson.getString(JSON_KEY_PAYMENT_ID));
                     purchase.setPurchaseTime(Long.parseLong(purchaseJson.getString(JSON_KEY_PURCHASE_DATE)));
                     purchase.setToken(purchaseJson.getString(JSON_KEY_PURCHASE_ID));
@@ -398,7 +427,7 @@ public class SamsungAppsBillingService implements AppstoreInAppBillingService {
         setupListener.onIabSetupFinished(new IabResult(errorCode, errorMsg));
     }
 
-    private boolean processItemsBundle(Bundle itemsBundle, String itemGroupId, Inventory inventory, boolean querySkuDetails, boolean addPurchase, boolean addConsumable,  Set<String> queryItemIds) {
+    private boolean processItemsBundle(Bundle itemsBundle, String itemGroupId, Inventory inventory, boolean querySkuDetails, boolean addPurchase, boolean addConsumable, Set<String> queryItemIds) {
         if (itemsBundle == null || itemsBundle.getInt(KEY_NAME_STATUS_CODE) != IAP_ERROR_NONE) {
             return false;
         }

@@ -87,13 +87,13 @@ public class AmazonAppstoreBillingService extends BasePurchasingObserver impleme
      * <li>{@link #queryInventory(boolean, List, List)}
      * <li>{@link #onPurchaseUpdatesResponse(PurchaseUpdatesResponse)}
      * <li>{@link #onItemDataResponse(ItemDataResponse)}*/
-    private Inventory inventory;
+    private Inventory inventory = new Inventory();
     
     /** If not null will be notified from  */
     private IabHelper.OnIabSetupFinishedListener setupListener;
 
     /** TODO: consider removal inventoryLatch or using carefully */
-    private CountDownLatch inventoryLatch;
+    private CountDownLatch inventoryLatch = new CountDownLatch(0);
 
     public AmazonAppstoreBillingService(Context context) {
         super(context);
