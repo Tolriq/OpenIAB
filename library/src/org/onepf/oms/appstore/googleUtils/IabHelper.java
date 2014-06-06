@@ -227,9 +227,6 @@ public class IabHelper implements AppstoreInAppBillingService {
 
             @Override
             public void onServiceConnected(ComponentName name, IBinder service) {
-                if (!mSetupDone) {
-                    return;
-                }
                 logDebug("Billing service connected.");
                 mService = getServiceFromBinder(service);
                 componentName = name;
