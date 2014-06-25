@@ -75,13 +75,19 @@ public class OpenIABEventManager : MonoBehaviour
 
     private void OnPurchaseFailed(string message)
     {
-        var tokens = message.Split('|');
-        string errorMessage = tokens[1];
+		int errorCode = -1;
+		string errorMessage = "Unknown error";
 
-        int errorCode;
-        if (!Int32.TryParse(tokens[0], out errorCode))
-            errorCode = -1;
+		if (!string.IsNullOrEmpty(message)) {
+	        string[] tokens = message.Split('|');
 
+			if (tokens.Length >= 2) {
+				Int32.TryParse(tokens[0], out errorCode);
+				errorMessage = tokens[1];
+			} else {
+				errorMessage = message;
+			}
+		}
         if (purchaseFailedEvent != null)
             purchaseFailedEvent(errorCode, errorMessage);
     }
@@ -124,9 +130,7 @@ public class OpenIABEventManager : MonoBehaviour
 #endif
 
 #if UNITY_IOS 
-	private void OnBillingSupported(string inventory) {
-        OpenIAB_iOS.CreateInventory(inventory);
-
+	private void OnBillingSupported(string empty) {
 		if (billingSupportedEvent != null) {
 			billingSupportedEvent();
 		}
@@ -140,12 +144,6 @@ public class OpenIABEventManager : MonoBehaviour
 	private void OnQueryInventorySucceeded(string json) {
 		if (queryInventorySucceededEvent != null) {
 			Inventory inventory = new Inventory(json);
-			queryInventorySucceededEvent(inventory);
-		}
-	}
-
-	public static void OnQueryInventorySucceeded(Inventory inventory) {
-		if (queryInventorySucceededEvent != null) {
 			queryInventorySucceededEvent(inventory);
 		}
 	}

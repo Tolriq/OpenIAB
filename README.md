@@ -24,7 +24,7 @@ When setup is done call  `helper.queryInventory()`
 https://github.com/onepf/OpenIAB/blob/master/samples/trivialdrive/src/org/onepf/trivialdrive/MainActivity.java#L196
 
 4. Handle the results of `helper.queryInventory()` in an inventory listener and update UI to show what was purchased
-https://github.com/onepf/OpenIAB/blob/master/samples/trivialdrive/src/org/onepf/trivialdrive/MainActivity.java#L215
+https://github.com/onepf/OpenIAB/blob/master/samples/trivialdrive/src/org/onepf/trivialdrive/MainActivity.java#L223
 
 5. To process purchases you need to override `onActivityResult()` of your Activity
     ```java
@@ -35,16 +35,16 @@ https://github.com/onepf/OpenIAB/blob/master/samples/trivialdrive/src/org/onepf/
        }
     ```
 When the user requests purchase of an item, call  `helper.launchPurchaseFlow()`
-https://github.com/onepf/OpenIAB/blob/master/samples/trivialdrive/src/org/onepf/trivialdrive/MainActivity.java#L286
+https://github.com/onepf/OpenIAB/blob/master/samples/trivialdrive/src/org/onepf/trivialdrive/MainActivity.java#L294
 and handle the results with the listener
-https://github.com/onepf/OpenIAB/blob/master/samples/trivialdrive/src/org/onepf/trivialdrive/MainActivity.java#L388
+https://github.com/onepf/OpenIAB/blob/master/samples/trivialdrive/src/org/onepf/trivialdrive/MainActivity.java#L396
 
 6. If the user has purchased a consumable item, call  ``` helper.consume() ```
 to exclude it from the inventory. If the item is not consumed, a store supposes it as non-consumable item and doesn't allow to purchase it one more time. Also it will be returned by ``` helper.queryInventory() ``` next time
-https://github.com/onepf/OpenIAB/blob/master/samples/trivialdrive/src/org/onepf/trivialdrive/MainActivity.java#L407
+https://github.com/onepf/OpenIAB/blob/master/samples/trivialdrive/src/org/onepf/trivialdrive/MainActivity.java#L415
 
 7. Specify keys for different stores like this:
-https://github.com/onepf/OpenIAB/blob/master/samples/trivialdrive/src/org/onepf/trivialdrive/MainActivity.java#L166
+https://github.com/onepf/OpenIAB/blob/master/samples/trivialdrive/src/org/onepf/trivialdrive/MainActivity.java#L188
 
 8. Add the required permissions to the AndroidManifest.xml
 
@@ -64,6 +64,8 @@ https://github.com/onepf/OpenIAB/blob/master/samples/trivialdrive/src/org/onepf/
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.SEND_SMS" />
+    <!--SlideME-->
+    <uses-permission android:name="com.slideme.sam.manager.inapp.permission.BILLING" />
     ```
 
     Be careful using sms permissions. If you want to support devices without sms functionality, don't forget to add
@@ -86,6 +88,9 @@ https://github.com/onepf/OpenIAB/blob/master/samples/trivialdrive/src/org/onepf/
 
     # SAMSUNG
     -keep class com.sec.android.iap.**
+    
+    # NOKIA
+    -keep class com.nokia.payment.iap.aidl.**
 
     #FORTUMO
     -keep class mp.** { *; }
@@ -148,7 +153,7 @@ Google Play and Open Stores
 Receipt Verification on Server
 ---------------------
 
-1. Create OpenIabHelper with "Skip signature verification" option and no publicKeys. If you specify no publicKeys and forget VERIFY_SKIP options IabHelper will throw
+1. Create OpenIabHelper with "Skip signature verification" option and no publicKeys. If you specify no publicKeys and forget VERIFY_SKIP option, an IllegalArgumentException will be thrown
 
     ```java
     Options opts = new OpenIabHelper.Options();
@@ -165,7 +170,7 @@ Receipt Verification on Server
             String receiptData = purchase.getOriginalJson();
             String receiptSignature = purchase.getSignature();
             String storeName = purchase.getAppstoreName();
-            String urlToContent  = requestReceiptVerificationOnServer(receiptData, receiptSignature, storeName);
+            String urlToContent  = yourRequestReceiptVerificationOnServer(receiptData, receiptSignature, storeName);
             // … further code ...
         }
     }
@@ -281,6 +286,14 @@ Nokia IAP
     ```bash
     # install for Nokia Store:
     adb install -i com.nokia.payment.iapenabler /path/to/YourApp.apk
+    ```
+
+SlideME
+-------------
+1. In the AndroidManifest.xml add the corresponding billing permission
+
+    ```xml
+     <uses-permission android:name="com.slideme.sam.manager.inapp.permission.BILLING" />
     ```
 
 Fortumo: carrier billing and NOOK
