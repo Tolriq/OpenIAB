@@ -129,10 +129,16 @@ public class NokiaStoreHelper implements AppstoreInAppBillingService {
 			}
 
 		} else {
-
-			mContext.bindService(serviceIntent, mServiceConn, Context.BIND_AUTO_CREATE);
-
-		}
+            try {
+                mContext.bindService(serviceIntent, mServiceConn, Context.BIND_AUTO_CREATE);
+            } catch (Exception e) {
+                if (listener != null) {
+                    listener.onIabSetupFinished(new NokiaResult(RESULT_BILLING_UNAVAILABLE,
+                            "Billing service unavailable on device (No permission)."));
+                    logError("Error binding to NokiaStore", e);
+                }
+            }
+        }
 	}
 
 	private Intent getServiceIntent() {
