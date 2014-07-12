@@ -230,7 +230,7 @@ public class IabHelper implements AppstoreInAppBillingService {
                 logDebug("Billing service connected.");
                 mService = getServiceFromBinder(service);
                 componentName = name;
-                String packageName = mContext.getPackageName();
+                String packageName = getPackageName();
                 try {
                     logDebug("Checking for in-app billing 3 support.");
 
@@ -745,6 +745,9 @@ public class IabHelper implements AppstoreInAppBillingService {
     }
 
     public String getPackageName() {
+        if (mContext == null) {
+            return null;
+        }
         return mContext.getPackageName();
     }
 
