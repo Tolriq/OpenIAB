@@ -110,7 +110,10 @@ public class GooglePlay extends DefaultAppstore {
                             }
                         } catch (RemoteException e) {
                             Log.e(TAG, "isBillingAvailable() RemoteException while setting up in-app billing", e);
-                        } finally {
+                        } catch (Exception e){
+                            Log.e(TAG, "isBillingAvailable() Exception while setting up in-app billing", e);
+                        }
+                        finally {
                             latch.countDown();
                             try {
                                 context.unbindService(this);

@@ -226,7 +226,15 @@ public class NokiaStoreHelper implements AppstoreInAppBillingService {
 				listener.onIabPurchaseFinished(result, null);
 			}
 
-		}
+		} catch (Exception e) {
+            logError("Exception: " + e, e);
+
+            final IabResult result = new NokiaResult(IabHelper.IABHELPER_REMOTE_EXCEPTION, "Error starting purchaseFlow");
+            if (listener != null) {
+                listener.onIabPurchaseFinished(result, null);
+            }
+
+        }
 	}
 
 	/**
@@ -394,7 +402,9 @@ public class NokiaStoreHelper implements AppstoreInAppBillingService {
 			response = mService.consumePurchase(3, packageName, productId, token);
 		} catch (RemoteException e) {
 			logError("RemoteException: " + e, e);
-		}
+		} catch (Exception e) {
+            logError("Exception: " + e, e);
+        }
 
 		if (response == RESULT_OK) {
 			logDebug("Successfully consumed productId: " + productId);
@@ -486,7 +496,9 @@ public class NokiaStoreHelper implements AppstoreInAppBillingService {
 
 		} catch (RemoteException e) {
 			logError("Exception: " + e, e);
-		}
+		} catch (Exception e) {
+            logError("Exception: " + e, e);
+        }
 	}
 
 	private void processPurchasedList(final ArrayList<String> purchasedDataList, final Inventory inventory) {
@@ -562,7 +574,9 @@ public class NokiaStoreHelper implements AppstoreInAppBillingService {
 			logError("Exception: " + e, e);
 		} catch (JSONException e) {
 			logError("Exception: " + e, e);
-		}
+		} catch (Exception e) {
+            logError("Exception: " + e, e);
+        }
 	}
 
 	private void processDetailsList(final List<String> detailsList, final Inventory inventory)
