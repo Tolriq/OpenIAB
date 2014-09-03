@@ -536,6 +536,11 @@ public class NokiaStoreHelper implements AppstoreInAppBillingService {
 		logInfo("NokiaStoreHelper.refreshItemDetails");
 
 		final List<String> storeSkus = OpenIabHelper.getAllStoreSkus(OpenIabHelper.NAME_NOKIA);
+
+        if (storeSkus == null) {
+            throw new IabException(new NokiaResult(RESULT_ERROR, "Error refreshing inventory (querying prices of items)."));
+        }
+
 		final Bundle storeSkusBundle = new Bundle(32);
 
 		final ArrayList<String> combinedStoreSkus = new ArrayList<String>(32);
