@@ -671,7 +671,13 @@ public class OpenIabHelper {
         }
         PackageManager packageManager = context.getPackageManager();
         final Intent intentAppstoreServices = new Intent(BIND_INTENT);
-        List<ResolveInfo> infoList = packageManager.queryIntentServices(intentAppstoreServices, 0);
+        List<ResolveInfo> infoList;
+        try {
+            infoList = packageManager.queryIntentServices(intentAppstoreServices, 0);
+        } catch (Exception e) {
+            if (isDebugLog()) Log.d(TAG, "discoverOpenStores() PM error " + e.getMessage());
+            return new ArrayList<Appstore>(0);
+        }
         final List<Appstore> result = dest != null ? dest : new ArrayList<Appstore>(infoList != null ? infoList.size() : 0);
         if (infoList == null || infoList.isEmpty()) {
             return result;
