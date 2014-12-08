@@ -21,6 +21,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import android.content.pm.ResolveInfo;
+
 import org.onepf.oms.Appstore;
 import org.onepf.oms.AppstoreInAppBillingService;
 import org.onepf.oms.DefaultAppstore;
@@ -50,17 +51,17 @@ public class GooglePlay extends DefaultAppstore {
         return OpenIabHelper.isDebugLog();
     }
 
-    public  static final String ANDROID_INSTALLER = "com.android.vending";
+    public static final String ANDROID_INSTALLER = "com.android.vending";
     private static final String GOOGLE_INSTALLER = "com.google.vending";
-    public  static final String VENDING_ACTION = "com.android.vending.billing.InAppBillingService.BIND";
-    
-    public  static final int TIMEOUT_BILLING_SUPPORTED = 2000;
-    
+    public static final String VENDING_ACTION = "com.android.vending.billing.InAppBillingService.BIND";
+
+    public static final int TIMEOUT_BILLING_SUPPORTED = 2000;
+
     private Context context;
     private IabHelper mBillingService;
     private String publicKey;
     private volatile Boolean billingAvailable = null; // undefined until isBillingAvailable() is called
-    
+
     // isDebugMode = true |-> always returns app installed via Google Play
     private final boolean isDebugMode = false;
 
@@ -76,27 +77,34 @@ public class GooglePlay extends DefaultAppstore {
         }
         return OpenIabHelper.isPackageInstaller(context, ANDROID_INSTALLER);
     }
-    
+
     /**
-     * Assume Android app is published in Google Play in any case. 
+     * Assume Android app is published in Google Play in any case.
      * <ul><li>
      * - check Google Play package is installed<li>
      * - check Google Play Vending service is available<li>
      * - check Google Play Vending supports v3 items TYPE_IN-APP (false if Google Play account doesn't exist)
      * </ul>
-     * @return true if Google Play is installed in the system   
+     *
+     * @return true if Google Play is installed in the system
      */
-    @Override    
+    @Override
     public boolean isBillingAvailable(final String packageName) {
         if (isDebugLog()) Log.d(TAG, "isBillingAvailable() packageName: " + packageName);
         if (billingAvailable != null) return billingAvailable; // return previosly checked result
         billingAvailable = false;
-        if (packageExists(context, ANDROID_INSTALLER) || packageExists(context, GOOGLE_INSTALLER)) {
-            final Intent intent = new Intent(GooglePlay.VENDING_ACTION);
-            intent.setPackage(GooglePlay.ANDROID_INSTALLER);
-            final List<ResolveInfo> infoList = context.getPackageManager().queryIntentServices(intent, 0);
-            if (infoList != null && !infoList.isEmpty()) {
-                final CountDownLatch latch = new CountDownLatch(1);
+
+        if (!packageExists(context, ANDROID_INSTALLER)) {
+            Log.d(TAG, "isBillingAvailable() Google Play is not available.");
+            return false;
+        }
+
+        final Intent intent = new Intent(GooglePlay.VENDING_ACTION);
+        intent.setPackage(GooglePlay.ANDROID_INSTALLER);
+        final List<ResolveInfo> infoList = context.getPackageManager().queryIntentServices(intent, 0);
+        if (infoList != null && !infoList.isEmpty()) {
+            final CountDownLatch latch = new CountDownLatch(1);
+            try {
                 context.bindService(intent, new ServiceConnection() {
                     public void onServiceConnected(ComponentName name, IBinder service) {
                         IInAppBillingService mService = IInAppBillingService.Stub.asInterface(service);
@@ -106,14 +114,14 @@ public class GooglePlay extends DefaultAppstore {
                             if (response == IabHelper.BILLING_RESPONSE_RESULT_OK) {
                                 billingAvailable = true;
                             } else {
-                                if (isDebugLog()) Log.d(TAG, "isBillingAvailable() Google Play billing unavaiable");
+                                if (isDebugLog())
+                                    Log.d(TAG, "isBillingAvailable() Google Play billing unavaiable");
                             }
                         } catch (RemoteException e) {
                             Log.e(TAG, "isBillingAvailable() RemoteException while setting up in-app billing", e);
-                        } catch (Exception e){
+                        } catch (Exception e) {
                             Log.e(TAG, "isBillingAvailable() Exception while setting up in-app billing", e);
-                        }
-                        finally {
+                        } finally {
                             latch.countDown();
                             try {
                                 context.unbindService(this);
@@ -124,11 +132,15 @@ public class GooglePlay extends DefaultAppstore {
 
                     public void onServiceDisconnected(ComponentName name) {/*do nothing*/}
                 }, Context.BIND_AUTO_CREATE);
-                try {
-                    latch.await(TIMEOUT_BILLING_SUPPORTED, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    Log.e(TAG, "isBillingAvailable() billing is not supported. Initialization error. ", e);
-                }
+            } catch (Exception e) {
+                latch.countDown();
+                Log.e(TAG, "isBillingAvailable() billing is not supported. Initialization error. ", e);
+                return false;
+            }
+            try {
+                latch.await(TIMEOUT_BILLING_SUPPORTED, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                Log.e(TAG, "isBillingAvailable() billing is not supported. Initialization error. ", e);
             }
         }
         return billingAvailable;
@@ -157,7 +169,9 @@ public class GooglePlay extends DefaultAppstore {
             context.getPackageManager().getPackageInfo(packageName, 0);
             return true;
         } catch (PackageManager.NameNotFoundException ignored) {
-            if (isDebugLog()) {Log.d(TAG, String.format("%s package was not found.", packageName));}
+            if (isDebugLog()) {
+                Log.d(TAG, String.format("%s package was not found.", packageName));
+            }
             return false;
         }
     }

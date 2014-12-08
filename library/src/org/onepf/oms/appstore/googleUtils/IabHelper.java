@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import android.content.pm.ResolveInfo;
+
 import org.json.JSONException;
 import org.onepf.oms.Appstore;
 import org.onepf.oms.AppstoreInAppBillingService;
@@ -76,13 +77,13 @@ import com.android.vending.billing.IInAppBillingService;
  */
 public class IabHelper implements AppstoreInAppBillingService {
     private static final String TAG = IabHelper.class.getSimpleName();
-    
+
     /**
-     * TODO: move to Options? 
-     * Google Play doesn't support getSkuDetails for more than 20 SKUs at once 
+     * TODO: move to Options?
+     * Google Play doesn't support getSkuDetails for more than 20 SKUs at once
      */
     public static final int QUERY_SKU_DETAILS_BATCH_SIZE = 20;
-    
+
     String mDebugTag = TAG;
 
     // Is setup done?
@@ -105,8 +106,10 @@ public class IabHelper implements AppstoreInAppBillingService {
     // Connection to the service
     IInAppBillingService mService;
     ServiceConnection mServiceConn;
-    
-    /** for debug purposes */
+
+    /**
+     * for debug purposes
+     */
     ComponentName componentName;
 
     // The request code used to launch purchase flow
@@ -161,7 +164,9 @@ public class IabHelper implements AppstoreInAppBillingService {
     public static final String GET_SKU_DETAILS_ITEM_LIST = "ITEM_ID_LIST";
     public static final String GET_SKU_DETAILS_ITEM_TYPE_LIST = "ITEM_TYPE_LIST";
 
-    /** TODO: IabHelper for Google and OpenStore must not be same */
+    /**
+     * TODO: IabHelper for Google and OpenStore must not be same
+     */
     private Appstore appstore;
 
     /**
@@ -174,7 +179,7 @@ public class IabHelper implements AppstoreInAppBillingService {
      *                        This is used for verification of purchase signatures. You can find your app's base64-encoded
      *                        public key in your application's page on Google Play Developer Console. Note that this
      *                        is NOT your "developer public key".
-     * @param appstore TODO
+     * @param appstore        TODO
      */
     public IabHelper(Context ctx, String base64PublicKey, Appstore appstore) {
         mContext = ctx.getApplicationContext();
@@ -252,8 +257,7 @@ public class IabHelper implements AppstoreInAppBillingService {
                     if (response == BILLING_RESPONSE_RESULT_OK) {
                         logDebug("Subscriptions AVAILABLE.");
                         mSubscriptionsSupported = true;
-                    }
-                    else {
+                    } else {
                         logDebug("Subscriptions NOT AVAILABLE. Response: " + response);
                     }
 
@@ -261,7 +265,7 @@ public class IabHelper implements AppstoreInAppBillingService {
                 } catch (RemoteException e) {
                     if (listener != null && mFirstConnection) {
                         listener.onIabSetupFinished(new IabResult(IABHELPER_REMOTE_EXCEPTION,
-                                                    "RemoteException while setting up in-app billing."));
+                                "RemoteException while setting up in-app billing."));
                     }
                     Log.e(TAG, "RemoteException while setting up in-app billing", e);
                     return;
@@ -278,7 +282,14 @@ public class IabHelper implements AppstoreInAppBillingService {
         final List<ResolveInfo> infoList = mContext.getPackageManager().queryIntentServices(serviceIntent, 0);
         if (infoList != null && !infoList.isEmpty()) {
             // service available to handle that Intent
-            mContext.bindService(serviceIntent, mServiceConn, Context.BIND_AUTO_CREATE);
+            try {
+                mContext.bindService(serviceIntent, mServiceConn, Context.BIND_AUTO_CREATE);
+            } catch (Exception e) {
+                if (listener != null) {
+                    listener.onIabSetupFinished(new IabResult(BILLING_RESPONSE_RESULT_BILLING_UNAVAILABLE,
+                            "Billing service unavailable on device."));
+                }
+            }
         } else {
             // no service available to handle that Intent
             if (listener != null) {
@@ -289,7 +300,7 @@ public class IabHelper implements AppstoreInAppBillingService {
     }
 
     /**
-     * IabHelper code is shared between OpenStore and Google Play, but services has different names  
+     * IabHelper code is shared between OpenStore and Google Play, but services has different names
      */
     protected Intent getServiceIntent() {
         final Intent intent = new Intent(GooglePlay.VENDING_ACTION);
@@ -297,7 +308,9 @@ public class IabHelper implements AppstoreInAppBillingService {
         return intent;
     }
 
-    /** Override to return needed service interface */
+    /**
+     * Override to return needed service interface
+     */
     protected IInAppBillingService getServiceFromBinder(IBinder service) {
         return IInAppBillingService.Stub.asInterface(service);
     }
@@ -470,8 +483,8 @@ public class IabHelper implements AppstoreInAppBillingService {
      * @param resultCode  The resultCode as you received it.
      * @param data        The data (Intent) as you received it.
      * @return Returns true if the result was related to a purchase flow and was handled;
-     *         false if the result was not related to a purchase, in which case you should
-     *         handle it normally.
+     * false if the result was not related to a purchase, in which case you should
+     * handle it normally.
      */
     public boolean handleActivityResult(int requestCode, int resultCode, Intent data) {
         IabResult result;
@@ -545,13 +558,13 @@ public class IabHelper implements AppstoreInAppBillingService {
             if (!isValidDataSignature(mSignatureBase64, purchaseData, dataSignature)) {
                 logError("Purchase signature verification FAILED for sku " + sku);
                 result = new IabResult(IABHELPER_VERIFICATION_FAILED, "Signature verification failed for sku " + sku);
-                if (mPurchaseListener != null) mPurchaseListener.onIabPurchaseFinished(result, purchase);
+                if (mPurchaseListener != null)
+                    mPurchaseListener.onIabPurchaseFinished(result, purchase);
                 return;
             }
 
             logDebug("Purchase signature successfully verified.");
-        }
-        catch (JSONException e) {
+        } catch (JSONException e) {
             logError("Failed to parse purchase data.");
             e.printStackTrace();
             result = new IabResult(IABHELPER_BAD_RESPONSE, "Failed to parse purchase data.");
@@ -579,8 +592,7 @@ public class IabHelper implements AppstoreInAppBillingService {
      *                        Ignored if null or if querySkuDetails is false.
      * @param moreSubsSkus    additional SUBSCRIPTIONS skus to query information on, regardless of ownership.
      *                        Ignored if null or if querySkuDetails is false.
-     * @throws IabException
-     *          if a problem occurs while refreshing the inventory.
+     * @throws IabException if a problem occurs while refreshing the inventory.
      */
     public Inventory queryInventory(boolean querySkuDetails, List<String> moreItemSkus,
                                     List<String> moreSubsSkus) throws IabException {
@@ -707,8 +719,7 @@ public class IabHelper implements AppstoreInAppBillingService {
      * For that, see {@link #consumeAsync}.
      *
      * @param itemInfo The PurchaseInfo that represents the item to consume.
-     * @throws IabException
-     *          if there is a problem during consumption.
+     * @throws IabException if there is a problem during consumption.
      */
     public void consume(Purchase itemInfo) throws IabException {
         checkSetupDone("consume");
@@ -809,7 +820,7 @@ public class IabHelper implements AppstoreInAppBillingService {
      *
      * @param code The response code
      * @return A human-readable string explaining the result code.
-     *         It also includes the result code numerically.
+     * It also includes the result code numerically.
      */
     public static String getResponseDesc(int code) {
         String[] iab_msgs = ("0:OK/1:User Canceled/2:Unknown/" +
@@ -839,25 +850,27 @@ public class IabHelper implements AppstoreInAppBillingService {
     }
 
 
-    /** Checks that setup was done; if not, throws an exception.
-     * 
-     * <p>OpenIAB specific: NOT USED</p> 
-     * 
+    /**
+     * Checks that setup was done; if not, throws an exception.
+     * <p/>
+     * <p>OpenIAB specific: NOT USED</p>
+     * <p/>
      * <code>setupDone</code> state is tracked by {@link OpenIabHelper}, so check here duplicates
-     * already existed logic. At the same time we discovered race condition problem based on end-user 
-     * crash reports 
+     * already existed logic. At the same time we discovered race condition problem based on end-user
+     * crash reports
      * <p>Time to time when common onSetupSuccessfulListener calls queryInventory() IabHelper.setupDone is false
-     * We tried to solve it with volatile modifier and synchronized blocks. Both approaches failed. 
-     * Reasons are still unclear. The same flow in wrapper works perfect (OpenIabHelper) 
+     * We tried to solve it with volatile modifier and synchronized blocks. Both approaches failed.
+     * Reasons are still unclear. The same flow in wrapper works perfect (OpenIabHelper)
      * <p><pre>
      *  java.lang.IllegalStateException: IAB helper is not set up. Can't perform operation: queryInventory
-        at org.onepf.oms.appstore.googleUtils.IabHelper.checkSetupDone(IabHelper.java:806)
-        at org.onepf.oms.appstore.googleUtils.IabHelper.queryInventory(IabHelper.java:566)
-        at org.onepf.oms.OpenIabHelper.queryInventory(OpenIabHelper.java:930)
-        at org.onepf.oms.OpenIabHelper$5.run(OpenIabHelper.java:957)
-        at java.lang.Thread.run(Thread.java:864)
-        </pre></p>
-        @see https://github.com/onepf/OpenIAB/issues/199
+     * at org.onepf.oms.appstore.googleUtils.IabHelper.checkSetupDone(IabHelper.java:806)
+     * at org.onepf.oms.appstore.googleUtils.IabHelper.queryInventory(IabHelper.java:566)
+     * at org.onepf.oms.OpenIabHelper.queryInventory(OpenIabHelper.java:930)
+     * at org.onepf.oms.OpenIabHelper$5.run(OpenIabHelper.java:957)
+     * at java.lang.Thread.run(Thread.java:864)
+     * </pre></p>
+     *
+     * @see https://github.com/onepf/OpenIAB/issues/199
      */
     void checkSetupDone(String operation) {
 //        if (!mSetupDone) {
@@ -925,7 +938,7 @@ public class IabHelper implements AppstoreInAppBillingService {
 
         do {
             logDebug("Calling getPurchases with continuation token: " + continueToken);
-            if (mService == null){
+            if (mService == null) {
                 logDebug("getPurchases() failed: service is not connected.");
                 return IABHELPER_SERVICE_ERROR;
             }
@@ -980,10 +993,10 @@ public class IabHelper implements AppstoreInAppBillingService {
 
         return verificationFailed ? IABHELPER_VERIFICATION_FAILED : BILLING_RESPONSE_RESULT_OK;
     }
-    
+
     /**
-     * @param inv - Inventory with application SKUs 
-     * @param moreSkus - storeSKUs (processed in {@link OpenIabHelper#queryInventory(boolean, List, List)} 
+     * @param inv      - Inventory with application SKUs
+     * @param moreSkus - storeSKUs (processed in {@link OpenIabHelper#queryInventory(boolean, List, List)}
      */
     int querySkuDetails(String itemType, Inventory inv, List<String> moreSkus) throws RemoteException, JSONException {
         logDebug("querySkuDetails() Querying SKU details.");
@@ -1014,9 +1027,9 @@ public class IabHelper implements AppstoreInAppBillingService {
                 tmpBatch = new ArrayList<String>(QUERY_SKU_DETAILS_BATCH_SIZE);
             }
         }
-        
+
         logDebug("querySkuDetails() batches: " + batches.size() + ", " + batches);
-        
+
         for (ArrayList<String> batch : batches) {
             Bundle querySkus = new Bundle();
             querySkus.putStringArrayList(GET_SKU_DETAILS_ITEM_LIST, batch);
@@ -1108,6 +1121,7 @@ public class IabHelper implements AppstoreInAppBillingService {
         }
         return isValid;
     }
+
     private static boolean isDebugLog() {
         return OpenIabHelper.isDebugLog();
     }
