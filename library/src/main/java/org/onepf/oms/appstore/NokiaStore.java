@@ -16,6 +16,7 @@
 
 package org.onepf.oms.appstore;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -34,7 +35,6 @@ import org.onepf.oms.util.Logger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-import java.util.List;
 
 public class NokiaStore extends DefaultAppstore {
 
@@ -65,17 +65,7 @@ public class NokiaStore extends DefaultAppstore {
         Logger.i("NokiaStore.isBillingAvailable");
         Logger.d("packageName = ", packageName);
 
-        final PackageManager packageManager = context.getPackageManager();
-        final List<PackageInfo> allPackages = packageManager.getInstalledPackages(0);
-
-        for (final PackageInfo packageInfo : allPackages) {
-
-            if (NOKIA_INSTALLER.equals(packageInfo.packageName)) {
-                return verifyFingreprint();
-            }
-        }
-
-        return false;
+        return verifyFingerprint();
     }
 
     /**
@@ -86,6 +76,9 @@ public class NokiaStore extends DefaultAppstore {
         Logger.d("sPackageInstaller: packageName = ", packageName);
 
         final PackageManager packageManager = context.getPackageManager();
+        if (packageManager == null) {
+            return false;
+        }
         final String installerPackageName = packageManager.getInstallerPackageName(packageName);
 
         Logger.d("installerPackageName = ", installerPackageName);
@@ -118,14 +111,18 @@ public class NokiaStore extends DefaultAppstore {
      *
      * @return true if signature matches, false if package is not found or signature does not match.
      */
-    private boolean verifyFingreprint() {
+    private boolean verifyFingerprint() {
 
         try {
-            PackageInfo info = context
-                    .getPackageManager()
-                    .getPackageInfo(NOKIA_INSTALLER, PackageManager.GET_SIGNATURES);
+            PackageManager pm = context.getPackageManager();
+            if (pm == null) {
+                return false;
+            }
 
-            if (info.signatures.length == 1) {
+            @SuppressLint("PackageManagerGetSignatures")
+            PackageInfo info = pm.getPackageInfo(NOKIA_INSTALLER, PackageManager.GET_SIGNATURES);
+
+            if (info.signatures != null && info.signatures.length == 1) {
                 byte[] cert = info.signatures[0].toByteArray();
                 MessageDigest digest;
                 digest = MessageDigest.getInstance("SHA1");
@@ -137,10 +134,9 @@ public class NokiaStore extends DefaultAppstore {
                     return true;
                 }
             }
-        } catch (NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException | PackageManager.NameNotFoundException e) {
             e.printStackTrace();
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
+        } catch (Exception ignore) {
         }
         return false;
     }
