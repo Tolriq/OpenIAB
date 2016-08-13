@@ -75,7 +75,7 @@ public class AmazonAppstoreBillingService implements AppstoreInAppBillingService
     public static final String JSON_KEY_RECEIPT_PURCHASE_TOKEN = "purchaseToken";
 
     private final Map<RequestId, IabHelper.OnIabPurchaseFinishedListener> requestListeners =
-            new HashMap<RequestId, IabHelper.OnIabPurchaseFinishedListener>();
+            new HashMap<>();
 
     private final Context context;
 
@@ -111,7 +111,7 @@ public class AmazonAppstoreBillingService implements AppstoreInAppBillingService
      * the one from {@link PurchasingListener#onPurchaseUpdatesResponse(PurchaseUpdatesResponse)}, we'll just
      * assume separate requests are equal and use simple queue for synchronization
      */
-    private final Queue<CountDownLatch> inventoryLatchQueue = new ConcurrentLinkedQueue<CountDownLatch>();
+    private final Queue<CountDownLatch> inventoryLatchQueue = new ConcurrentLinkedQueue<>();
 
     /**
      * If not null will be notified from
@@ -179,7 +179,7 @@ public class AmazonAppstoreBillingService implements AppstoreInAppBillingService
         }
 
         if (querySkuDetails) {
-            final Set<String> querySkus = new HashSet<String>(inventory.getAllOwnedSkus());
+            final Set<String> querySkus = new HashSet<>(inventory.getAllOwnedSkus());
             if (moreItemSkus != null) {
                 querySkus.addAll(moreItemSkus);
             }
@@ -187,7 +187,7 @@ public class AmazonAppstoreBillingService implements AppstoreInAppBillingService
                 querySkus.addAll(moreSubsSkus);
             }
             if (!querySkus.isEmpty()) {
-                final HashSet<String> queryStoreSkus = new HashSet<String>(querySkus.size());
+                final HashSet<String> queryStoreSkus = new HashSet<>(querySkus.size());
                 for (String sku : querySkus) {
                     queryStoreSkus.add(SkuManager.getInstance().getStoreSku(OpenIabHelper.NAME_AMAZON, sku));
                 }
@@ -221,12 +221,13 @@ public class AmazonAppstoreBillingService implements AppstoreInAppBillingService
                 final UserData userData = purchaseUpdatesResponse.getUserData();
                 final String userId = userData.getUserId();
                 if (!userId.equals(currentUserId)) {
-                    Logger.w("onPurchaseUpdatesResponse() Current UserId: ", currentUserId,
-                            ", purchase UserId: ", userId);
+                    Logger.w("onPurchaseUpdatesResponse() Current UserId: ", currentUserId, ", purchase UserId: ", userId);
                     break;
                 }
                 for (final Receipt receipt : purchaseUpdatesResponse.getReceipts()) {
-                    inventory.addPurchase(getPurchase(receipt));
+                    Purchase purchase = getPurchase(receipt);
+                    purchase.setOriginalJson(generateOriginalJson(receipt, userId));
+                    inventory.addPurchase(purchase);
                 }
                 if (purchaseUpdatesResponse.hasMore()) {
                     PurchasingService.getPurchaseUpdates(false);
@@ -300,7 +301,7 @@ public class AmazonAppstoreBillingService implements AppstoreInAppBillingService
     @NotNull
     private SkuDetails getSkuDetails(@NotNull final Product product) {
         final String sku = product.getSku();
-        final String price = product.getPrice().toString();
+        final String price = product.getPrice();
         final String title = product.getTitle();
         final String description = product.getDescription();
         final ProductType productType = product.getProductType();
@@ -319,7 +320,7 @@ public class AmazonAppstoreBillingService implements AppstoreInAppBillingService
      * <br>
      * This map is intended to workaround this issue.
      */
-    private final Map<RequestId, String> requestSkuMap = new HashMap<RequestId, String>();
+    private final Map<RequestId, String> requestSkuMap = new HashMap<>();
 
     @Override
     public void launchPurchaseFlow(
@@ -434,6 +435,40 @@ public class AmazonAppstoreBillingService implements AppstoreInAppBillingService
             }
             json.put(JSON_KEY_RECEIPT_PURCHASE_TOKEN, receipt.getReceiptId());
             Logger.d("generateOriginalJson(): JSON\n", json);
+        } catch (JSONException e) {
+            Logger.e("generateOriginalJson() failed to generate JSON", e);
+        }
+        return json.toString();
+    }
+
+    /**
+     * Converts receipt to json for transfer with purchase object
+     * <p/>
+     * <pre>
+     * {
+     * "productId"         : "receipt.getSku"
+     * "purchaseStatus"    : "SUCCESSFUL"
+     * "userId"            : "userId" // can be null
+     * "itemType"          : "receipt.getItemType().name()" // if non-null
+     * "purchaseToken"     : "receipt.purchaseToken"
+     * } </pre>
+     *
+     * @param receipt The receipt
+     * @param userId  The userId
+     * @return The generated JSON as String
+     */
+    private String generateOriginalJson(Receipt receipt, String userId) {
+        JSONObject json = new JSONObject();
+        try {
+            json.put(JSON_KEY_PRODUCT_ID, receipt.getSku());
+            json.put(JSON_KEY_PURCHASE_STATUS, PurchaseResponse.RequestStatus.SUCCESSFUL.name());
+            json.put(JSON_KEY_USER_ID, userId);
+            final ProductType productType = receipt.getProductType();
+            if (productType != null) {
+                json.put(JSON_KEY_RECEIPT_ITEM_TYPE, productType.name());
+            }
+            json.put(JSON_KEY_RECEIPT_PURCHASE_TOKEN, receipt.getReceiptId());
+            Logger.d("generateOriginalJson(): JSON\n" + json.toString());
         } catch (JSONException e) {
             Logger.e("generateOriginalJson() failed to generate JSON", e);
         }
