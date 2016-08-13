@@ -16,12 +16,21 @@
 
 package org.onepf.oms.appstore.googleUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-
+import android.app.Activity;
+import android.app.PendingIntent;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentSender.SendIntentException;
+import android.content.ServiceConnection;
 import android.content.pm.ResolveInfo;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.RemoteException;
+import android.text.TextUtils;
+
+import com.android.vending.billing.IInAppBillingService;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,20 +42,10 @@ import org.onepf.oms.SkuManager;
 import org.onepf.oms.appstore.GooglePlay;
 import org.onepf.oms.util.Logger;
 
-import android.app.Activity;
-import android.app.PendingIntent;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentSender.SendIntentException;
-import android.content.ServiceConnection;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.IBinder;
-import android.os.RemoteException;
-import android.text.TextUtils;
-
-import com.android.vending.billing.IInAppBillingService;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Provides convenience methods for in-app billing. You can create one instance of this
@@ -146,6 +145,7 @@ public class IabHelper implements AppstoreInAppBillingService {
     public static final int IABHELPER_UNKNOWN_ERROR = -1008;
     public static final int IABHELPER_SUBSCRIPTIONS_NOT_AVAILABLE = -1009;
     public static final int IABHELPER_INVALID_CONSUMPTION = -1010;
+    public static final int IABHELPER_SERVICE_ERROR = -1011;
 
     // Keys for the responses from InAppBillingService
     public static final String RESPONSE_CODE = "RESPONSE_CODE";
@@ -217,10 +217,18 @@ public class IabHelper implements AppstoreInAppBillingService {
         // Connection to IAB service
         Logger.d("Starting in-app billing setup.");
         mServiceConn = new ServiceConnection() {
+
+            private boolean mFirstConnection = true;
+
             @Override
             public void onServiceDisconnected(ComponentName name) {
                 Logger.d("Billing service disconnected.");
                 mService = null;
+                try {
+                    // Try to automatically reconnect to service
+                    mContext.bindService(getServiceIntent(), this, Context.BIND_AUTO_CREATE);
+                } catch (Exception ignore) {
+                }
             }
 
             @Override
@@ -233,13 +241,16 @@ public class IabHelper implements AppstoreInAppBillingService {
                 final Handler handler = new Handler();
                 flagStartAsync("startSetup");
                 startSetupIabAsync(packageName, new OnIabSetupFinishedListener() {
-                    @Override public void onIabSetupFinished(final IabResult result) {
+                    @Override
+                    public void onIabSetupFinished(final IabResult result) {
                         handler.post(new Runnable() {
-                            @Override public void run() {
+                            @Override
+                            public void run() {
                                 flagEndAsync();
-                                if (listener != null) {
+                                if (listener != null && mFirstConnection) {
                                     listener.onIabSetupFinished(result);
                                 }
+                                mFirstConnection = false;
                             }
                         });
                     }
@@ -251,7 +262,14 @@ public class IabHelper implements AppstoreInAppBillingService {
         final List<ResolveInfo> infoList = mContext.getPackageManager().queryIntentServices(serviceIntent, 0);
         if (infoList != null && !infoList.isEmpty()) {
             // service available to handle that Intent
-            mContext.bindService(serviceIntent, mServiceConn, Context.BIND_AUTO_CREATE);
+            try {
+                mContext.bindService(serviceIntent, mServiceConn, Context.BIND_AUTO_CREATE);
+            } catch (Exception e) {
+                if (listener != null) {
+                    listener.onIabSetupFinished(new IabResult(BILLING_RESPONSE_RESULT_BILLING_UNAVAILABLE,
+                            "Billing service unavailable on device."));
+                }
+            }
         } else {
             // no service available to handle that Intent
             if (listener != null) {
@@ -261,19 +279,23 @@ public class IabHelper implements AppstoreInAppBillingService {
             }
         }
     }
-    
+
     /**
-     * Performs Iab setup with the mService object which must 
+     * Performs Iab setup with the mService object which must
      * be properly connected before calling this method.
      */
     private void startSetupIabAsync(final String packageName, final OnIabSetupFinishedListener listener) {
         new Thread(new Runnable() {
-            @Override public void run() {
+            @Override
+            public void run() {
                 try {
                     Logger.d("Checking for in-app billing 3 support.");
 
                     // check for in-app billing v3 support
-                    int response = mService.isBillingSupported(3, packageName, ITEM_TYPE_INAPP);
+                    int response = -1;
+                    if (mService != null) {
+                        response = mService.isBillingSupported(3, packageName, ITEM_TYPE_INAPP);
+                    }
                     if (response != BILLING_RESPONSE_RESULT_OK) {
                         if (listener != null) listener.onIabSetupFinished(new IabResult(response,
                                 "Error checking for billing v3 support."));
@@ -285,7 +307,10 @@ public class IabHelper implements AppstoreInAppBillingService {
                     Logger.d("In-app billing version 3 supported for ", packageName);
 
                     // check for v3 subscriptions support
-                    response = mService.isBillingSupported(3, packageName, ITEM_TYPE_SUBS);
+                    response = -1;
+                    if (mService != null) {
+                        response = mService.isBillingSupported(3, packageName, ITEM_TYPE_SUBS);
+                    }
                     if (response == BILLING_RESPONSE_RESULT_OK) {
                         Logger.d("Subscriptions AVAILABLE.");
                         mSubscriptionsSupported = true;
@@ -337,13 +362,16 @@ public class IabHelper implements AppstoreInAppBillingService {
     public void dispose() {
         Logger.d("Disposing.");
         mSetupDone = false;
-        if (mServiceConn != null) {
+        if (mService != null) {
             Logger.d("Unbinding from service.");
-            if (mContext != null) mContext.unbindService(mServiceConn);
-            mServiceConn = null;
+            if (mContext != null && mServiceConn != null) {
+                mContext.unbindService(mServiceConn);
+            }
             mService = null;
-            mPurchaseListener = null;
         }
+        mPurchaseListener = null;
+        mContext = null;
+        mServiceConn = null;
     }
 
     /**
@@ -437,7 +465,7 @@ public class IabHelper implements AppstoreInAppBillingService {
         try {
             Logger.d("Constructing buy intent for ", sku, ", item type: ", itemType);
             if (mService == null) {
-                result = new IabResult(BILLING_RESPONSE_RESULT_ERROR, "Unable to buy item");
+                result = new IabResult(IABHELPER_SERVICE_ERROR, "Service error");
                 Logger.e("In-app billing error: Unable to buy item, Error response: service is not connected.");
                 if (listener != null) listener.onIabPurchaseFinished(result, null);
                 flagEndAsync();
@@ -469,6 +497,12 @@ public class IabHelper implements AppstoreInAppBillingService {
         } catch (RemoteException e) {
             result = new IabResult(IABHELPER_REMOTE_EXCEPTION, "Remote exception while starting purchase flow");
             Logger.e("In-app billing error: RemoteException while launching purchase flow for sku " + sku, e);
+            if (listener != null) listener.onIabPurchaseFinished(result, null);
+        } catch (Exception e) {
+            Logger.e("Exception while launching purchase flow for sku " + sku);
+            e.printStackTrace();
+
+            result = new IabResult(IABHELPER_UNKNOWN_ERROR, "Exception while starting purchase flow : " + e.getMessage());
             if (listener != null) listener.onIabPurchaseFinished(result, null);
         }
         flagEndAsync();
@@ -635,6 +669,8 @@ public class IabHelper implements AppstoreInAppBillingService {
             throw new IabException(IABHELPER_REMOTE_EXCEPTION, "Remote exception while refreshing inventory.", e);
         } catch (JSONException e) {
             throw new IabException(IABHELPER_BAD_RESPONSE, "Error parsing JSON response while refreshing inventory.", e);
+        } catch (Exception e) {
+            throw new IabException(IABHELPER_UNKNOWN_ERROR, "Exception while refreshing inventory.", e);
         }
     }
 
@@ -677,17 +713,25 @@ public class IabHelper implements AppstoreInAppBillingService {
                 } catch (IabException ex) {
                     Logger.e("queryInventory() failed.", ex);
                     result = ex.getResult();
+                } catch (NullPointerException | IllegalStateException e) {
+                    // Ignore errors if disposed during async operations
+                    if (mSetupDone) {
+                        flagEndAsync();
+                        throw e;
+                    }
                 }
 
                 flagEndAsync();
 
                 final IabResult result_f = result;
                 final Inventory inv_f = inv;
-                handler.post(new Runnable() {
-                    public void run() {
-                        listener.onQueryInventoryFinished(result_f, inv_f);
-                    }
-                });
+                if (mSetupDone && listener != null) {
+                    handler.post(new Runnable() {
+                        public void run() {
+                            listener.onQueryInventoryFinished(result_f, inv_f);
+                        }
+                    });
+                }
             }
         })).start();
     }
@@ -734,7 +778,7 @@ public class IabHelper implements AppstoreInAppBillingService {
             Logger.d("Consuming sku: ", sku, ", token: ", token);
             if (mService == null) {
                 Logger.d("Error consuming consuming sku ", sku, ". Service is not connected.");
-                throw new IabException(BILLING_RESPONSE_RESULT_ERROR, "Error consuming sku " + sku);
+                throw new IabException(IABHELPER_SERVICE_ERROR, "Service error consuming sku " + sku);
             }
             int response = mService.consumePurchase(3, getPackageName(), token);
             if (response == BILLING_RESPONSE_RESULT_OK) {
@@ -871,6 +915,9 @@ public class IabHelper implements AppstoreInAppBillingService {
 
     // Workaround to bug where sometimes response codes come as Long instead of Integer
     int getResponseCodeFromBundle(@NotNull Bundle b) {
+        if (b == null) {
+            return BILLING_RESPONSE_RESULT_ERROR;
+        }
         Object o = b.get(RESPONSE_CODE);
         if (o == null) {
             Logger.d("Bundle with null response code, assuming OK (known issue)");
@@ -886,7 +933,7 @@ public class IabHelper implements AppstoreInAppBillingService {
 
     // Workaround to bug where sometimes response codes come as Long instead of Integer
     int getResponseCodeFromIntent(@NotNull Intent i) {
-        Object o = i.getExtras().get(RESPONSE_CODE);
+        Object o = (i.getExtras() != null) ? i.getExtras().get(RESPONSE_CODE) : null;
         if (o == null) {
             Logger.e("In-app billing error: Intent with no response code, assuming OK (known issue)");
             return BILLING_RESPONSE_RESULT_OK;
@@ -925,7 +972,7 @@ public class IabHelper implements AppstoreInAppBillingService {
             Logger.d("Calling getPurchases with continuation token: ", continueToken);
             if (mService == null) {
                 Logger.d("getPurchases() failed: service is not connected.");
-                return BILLING_RESPONSE_RESULT_ERROR;
+                return IABHELPER_SERVICE_ERROR;
             }
             Bundle ownedItems = mService.getPurchases(3, getPackageName(), itemType, continueToken);
 
@@ -1022,7 +1069,7 @@ public class IabHelper implements AppstoreInAppBillingService {
             querySkus.putStringArrayList(GET_SKU_DETAILS_ITEM_LIST, batch);
             if (mService == null) {
                 Logger.e("In-app billing error: unable to get sku details: service is not connected.");
-                return IABHELPER_BAD_RESPONSE;
+                return IABHELPER_SERVICE_ERROR;
             }
             Bundle skuDetails = mService.getSkuDetails(3, mContext.getPackageName(), itemType, querySkus);
 
@@ -1039,11 +1086,13 @@ public class IabHelper implements AppstoreInAppBillingService {
 
             ArrayList<String> responseList = skuDetails.getStringArrayList(RESPONSE_GET_SKU_DETAILS_LIST);
 
-            for (String thisResponse : responseList) {
-                SkuDetails d = new SkuDetails(itemType, thisResponse);
-                d.setSku(SkuManager.getInstance().getSku(appstoreName, d.getSku()));
-                Logger.d("querySkuDetails() Got sku details: ", d);
-                inv.addSkuDetails(d);
+            if (responseList != null) {
+                for (String thisResponse : responseList) {
+                    SkuDetails d = new SkuDetails(itemType, thisResponse);
+                    d.setSku(SkuManager.getInstance().getSku(appstoreName, d.getSku()));
+                    Logger.d("querySkuDetails() Got sku details: ", d);
+                    inv.addSkuDetails(d);
+                }
             }
         }
 
@@ -1069,14 +1118,14 @@ public class IabHelper implements AppstoreInAppBillingService {
                 }
 
                 flagEndAsync();
-                if (singleListener != null) {
+                if (mSetupDone && singleListener != null) {
                     handler.post(new Runnable() {
                         public void run() {
                             singleListener.onConsumeFinished(purchases.get(0), results.get(0));
                         }
                     });
                 }
-                if (multiListener != null) {
+                if (mSetupDone && multiListener != null) {
                     handler.post(new Runnable() {
                         public void run() {
                             multiListener.onConsumeMultiFinished(purchases, results);

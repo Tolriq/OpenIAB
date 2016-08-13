@@ -90,14 +90,14 @@ public class GooglePlay extends DefaultAppstore {
     public boolean isBillingAvailable(final String packageName) {
         Logger.d("isBillingAvailable() packageName: ", packageName);
         if (billingAvailable != null) {
-            return billingAvailable; // return previosly checked result
+            return billingAvailable; // return previously checked result
         }
 
         if (Utils.uiThread()) {
             throw new IllegalStateException("Must no be called from UI thread.");
         }
 
-        if (!packageExists(context, ANDROID_INSTALLER) && !packageExists(context, GOOGLE_INSTALLER)) {
+        if (!packageExists(context, ANDROID_INSTALLER)) {
             Logger.d("isBillingAvailable() Google Play is not available.");
             // don't set billingAvailable variable in case Google Play gets installed later
             return false;
@@ -106,7 +106,7 @@ public class GooglePlay extends DefaultAppstore {
         final Intent intent = new Intent(GooglePlay.VENDING_ACTION);
         intent.setPackage(GooglePlay.ANDROID_INSTALLER);
         final List<ResolveInfo> infoList = context.getPackageManager().queryIntentServices(intent, 0);
-        if (CollectionUtils.isEmpty(infoList)) {
+        if (infoList == null || CollectionUtils.isEmpty(infoList)) {
             Logger.e("isBillingAvailable() billing service is not available, even though Google Play application seems to be installed.");
             return false;
         }
@@ -122,24 +122,36 @@ public class GooglePlay extends DefaultAppstore {
                 } catch (RemoteException e) {
                     result[0] = false;
                     Logger.e("isBillingAvailable() RemoteException while setting up in-app billing", e);
+                } catch (Exception e){
+                    result[0] = false;
+                    Logger.e("isBillingAvailable() Exception while setting up in-app billing", e);
                 } finally {
                     latch.countDown();
-                    context.unbindService(this);
+                    try {
+                        context.unbindService(this);
+                    } catch (Exception ignore) {
+                    }
                 }
                 Logger.d("isBillingAvailable() Google Play result: ", result[0]);
             }
 
             public void onServiceDisconnected(ComponentName name) {/*do nothing*/}
         };
-        if (context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)) {
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                Logger.e("isBillingAvailable() InterruptedException while setting up in-app billing", e);
+        try {
+            if (context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)) {
+                try {
+                    latch.await();
+                } catch (InterruptedException e) {
+                    Logger.e("isBillingAvailable() InterruptedException while setting up in-app billing", e);
+                }
+            } else {
+                result[0] = false;
+                Logger.e("isBillingAvailable() billing is not supported. Initialization error.");
             }
-        } else {
-            result[0] = false;
-            Logger.e("isBillingAvailable() billing is not supported. Initialization error.");
+        } catch (Exception e) {
+            latch.countDown();
+            Logger.e("isBillingAvailable() billing is not supported. Initialization error. ", e);
+            return false;
         }
         return (billingAvailable = result[0]);
     }

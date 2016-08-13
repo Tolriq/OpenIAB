@@ -81,6 +81,7 @@ import static org.onepf.oms.OpenIabHelper.Options.VERIFY_SKIP;
  * @author Boris Minaev, Oleg Orlov, Kirill Rozov
  * @since 16.04.13
  */
+@SuppressWarnings({"unused", "deprecation"})
 public class OpenIabHelper {
     // Intent to discover and bind to Open Stores
     private static final String BIND_INTENT = "org.onepf.oms.openappstore.BIND";
@@ -226,7 +227,7 @@ public class OpenIabHelper {
     private final Options options;
 
     //Complete list of Appstores to check. Used if options.getAvailableStores() or options.getAvailableStoreNames is not empty.
-    private final Set<Appstore> availableAppstores = new LinkedHashSet<Appstore>();
+    private final Set<Appstore> availableAppstores = new LinkedHashSet<>();
 
     @Nullable
     private ExecutorService setupExecutorService;
@@ -235,13 +236,13 @@ public class OpenIabHelper {
     private final ExecutorService inventoryExecutor = Executors.newSingleThreadExecutor();
 
     //For internal use only. Do not make it public!
-    private static interface AppstoreFactory {
+    private interface AppstoreFactory {
         @Nullable
         Appstore get();
     }
 
-    private final Map<String, String> appStorePackageMap = new HashMap<String, String>();
-    private final Map<String, AppstoreFactory> appStoreFactoryMap = new HashMap<String, AppstoreFactory>();
+    private final Map<String, String> appStorePackageMap = new HashMap<>();
+    private final Map<String, AppstoreFactory> appStoreFactoryMap = new HashMap<>();
 
     {
         // Known packages for open stores
@@ -390,7 +391,7 @@ public class OpenIabHelper {
         final Collection<String> allStoreSkus =
                 SkuManager.getInstance().getAllStoreSkus(appStoreName);
         return allStoreSkus == null ? Collections.<String>emptyList()
-                : new ArrayList<String>(allStoreSkus);
+                : new ArrayList<>(allStoreSkus);
     }
 
     /**
@@ -486,20 +487,27 @@ public class OpenIabHelper {
         // Compose full list of available stores to check billing for
         availableAppstores.clear();
         // Add all manually supplied Appstores
-        availableAppstores.addAll(options.getAvailableStores());
-        final List<String> storeNames = new ArrayList<String>(options.getAvailableStoreNames());
+        if (options != null) {
+            availableAppstores.addAll(options.getAvailableStores());
+        }
+        final List<String> storeNames = new ArrayList<>();
+        if (options != null) {
+            storeNames.addAll(options.getAvailableStoreNames());
+        }
         // Remove already added stores
         for (final Appstore appstore : availableAppstores) {
             storeNames.remove(appstore.getAppstoreName());
         }
         // Instantiate and add all known wrappers
-        final List<Appstore> instantiatedAppstores = new ArrayList<Appstore>();
-        for (final String storeName : options.getAvailableStoreNames()) {
-            if (appStoreFactoryMap.containsKey(storeName)) {
-                final Appstore appstore = appStoreFactoryMap.get(storeName).get();
-                instantiatedAppstores.add(appstore);
-                availableAppstores.add(appstore);
-                storeNames.remove(storeName);
+        final List<Appstore> instantiatedAppstores = new ArrayList<>();
+        if (options != null) {
+            for (final String storeName : options.getAvailableStoreNames()) {
+                if (appStoreFactoryMap.containsKey(storeName)) {
+                    final Appstore appstore = appStoreFactoryMap.get(storeName).get();
+                    instantiatedAppstores.add(appstore);
+                    availableAppstores.add(appstore);
+                    storeNames.remove(storeName);
+                }
             }
         }
         // Look among open stores for specified store names
@@ -676,7 +684,7 @@ public class OpenIabHelper {
 
     private void setup(@NotNull final OnIabSetupFinishedListener listener) {
         // List of wrappers to check
-        final Set<Appstore> appstoresToCheck = new LinkedHashSet<Appstore>();
+        final Set<Appstore> appstoresToCheck = new LinkedHashSet<>();
 
         final Set<String> availableStoreNames = options.getAvailableStoreNames();
         if (!this.availableAppstores.isEmpty() || !availableStoreNames.isEmpty()) {
@@ -694,7 +702,7 @@ public class OpenIabHelper {
             discoverOpenStores(new OpenStoresDiscoveredListener() {
                 @Override
                 public void openStoresDiscovered(@NotNull final List<Appstore> appstores) {
-                    final List<Appstore> allAvailableAppstores = new ArrayList<Appstore>(appstores);
+                    final List<Appstore> allAvailableAppstores = new ArrayList<>(appstores);
                     // Add all available wrappers
                     for (final String appstorePackage : appStorePackageMap.keySet()) {
                         final String name = appStorePackageMap.get(appstorePackage);
@@ -770,7 +778,7 @@ public class OpenIabHelper {
         if (appstore == null) {
             finishSetup(listener);
         } else {
-            checkBillingAndFinish(listener, Arrays.asList(appstore));
+            checkBillingAndFinish(listener, Collections.singletonList(appstore));
         }
     }
 
@@ -791,14 +799,14 @@ public class OpenIabHelper {
             checkStoresRunnable = new Runnable() {
                 @Override
                 public void run() {
-                    final List<Appstore> availableAppstores = new ArrayList<Appstore>();
+                    final List<Appstore> availableAppstores = new ArrayList<>();
                     for (final Appstore appstore : appstores) {
                         appStoreInSetup = appstore;
                         if (appstore.isBillingAvailable(packageName) && versionOk(appstore)) {
                             availableAppstores.add(appstore);
                         }
                     }
-                    Appstore checkedAppstore = checkInventory(new HashSet<Appstore>(availableAppstores));
+                    Appstore checkedAppstore = checkInventory(new HashSet<>(availableAppstores));
                     final Appstore foundAppstore;
                     if (checkedAppstore == null) {
                         foundAppstore = availableAppstores.isEmpty() ? null : availableAppstores.get(0);
@@ -809,7 +817,7 @@ public class OpenIabHelper {
                         @Override
                         public void onIabSetupFinished(final IabResult result) {
                             // Dispose of all initialized open app stores
-                            final Collection<Appstore> appstoresToDispose = new ArrayList<Appstore>(availableAppstores);
+                            final Collection<Appstore> appstoresToDispose = new ArrayList<>(availableAppstores);
                             if (foundAppstore != null) {
                                 appstoresToDispose.remove(foundAppstore);
                             }
@@ -842,13 +850,16 @@ public class OpenIabHelper {
                         @Override
                         public void onIabSetupFinished(final IabResult result) {
                             // Dispose of all initialized open app stores
-                            final Collection<Appstore> appstoresToDispose = new ArrayList<Appstore>(appstores);
+                            final Collection<Appstore> appstoresToDispose = new ArrayList<>(appstores);
                             if (foundAppstore != null) {
                                 appstoresToDispose.remove(foundAppstore);
                             }
                             dispose(appstoresToDispose);
                             if (foundAppstore != null) {
-                                foundAppstore.getInAppBillingService().startSetup(listener);
+                                AppstoreInAppBillingService service = foundAppstore.getInAppBillingService();
+                                if (service != null) {
+                                    service.startSetup(listener);
+                                }
                             } else {
                                 listener.onIabSetupFinished(result);
                             }
@@ -864,13 +875,17 @@ public class OpenIabHelper {
             };
         }
 
-        setupExecutorService.execute(checkStoresRunnable);
+        if (setupExecutorService != null) {
+            setupExecutorService.execute(checkStoresRunnable);
+        }
     }
 
     private void dispose(@NotNull final Collection<Appstore> appstores) {
         for (final Appstore appstore : appstores) {
             final AppstoreInAppBillingService billingService = appstore.getInAppBillingService();
-            billingService.dispose();
+            if (billingService != null) {
+                billingService.dispose();
+            }
             Logger.d("dispose() was called for ", appstore.getAppstoreName());
         }
     }
@@ -917,11 +932,13 @@ public class OpenIabHelper {
         }
         activity = null;
         appStoreInSetup = null;
-        setupExecutorService.shutdownNow();
+        if (setupExecutorService != null) {
+            setupExecutorService.shutdownNow();
+        }
         setupExecutorService = null;
         if (setupState == SETUP_DISPOSED) {
             if (appstore != null) {
-                dispose(Arrays.asList(appstore));
+                dispose(Collections.singletonList(appstore));
             }
             return;
         } else if (setupState != SETUP_IN_PROGRESS) {
@@ -969,7 +986,7 @@ public class OpenIabHelper {
             throw new IllegalStateException("Must not be called from UI thread");
         }
 
-        final List<Appstore> openAppstores = new ArrayList<Appstore>();
+        final List<Appstore> openAppstores = new ArrayList<>();
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         discoverOpenStores(new OpenStoresDiscoveredListener() {
             @Override
@@ -993,7 +1010,7 @@ public class OpenIabHelper {
      */
     public void discoverOpenStores(@NotNull final OpenStoresDiscoveredListener listener) {
         final List<ServiceInfo> serviceInfos = queryOpenStoreServices();
-        final Queue<Intent> bindServiceIntents = new LinkedList<Intent>();
+        final Queue<Intent> bindServiceIntents = new LinkedList<>();
         for (final ServiceInfo serviceInfo : serviceInfos) {
             bindServiceIntents.add(getBindServiceIntent(serviceInfo));
         }
@@ -1058,12 +1075,18 @@ public class OpenIabHelper {
     private
     @NotNull
     List<ServiceInfo> queryOpenStoreServices() {
+        final List<ServiceInfo> serviceInfos = new ArrayList<>();
         final Intent intentAppstoreServices = new Intent(BIND_INTENT);
         final PackageManager packageManager = context.getPackageManager();
-        final List<ResolveInfo> resolveInfos = packageManager.queryIntentServices(intentAppstoreServices, 0);
-        final List<ServiceInfo> serviceInfos = new ArrayList<ServiceInfo>();
-        for (final ResolveInfo resolveInfo : resolveInfos) {
-            serviceInfos.add(resolveInfo.serviceInfo);
+        if (packageManager == null) {
+            return Collections.unmodifiableList(serviceInfos);
+        }
+        try {
+            final List<ResolveInfo> resolveInfos = packageManager.queryIntentServices(intentAppstoreServices, 0);
+            for (final ResolveInfo resolveInfo : resolveInfos) {
+                serviceInfos.add(resolveInfo.serviceInfo);
+            }
+        } catch (Exception ignore) {
         }
         return Collections.unmodifiableList(serviceInfos);
     }
@@ -1237,7 +1260,10 @@ public class OpenIabHelper {
                         @Override
                         public void run() {
                             try {
-                                final Inventory inventory = billingService.queryInventory(false, null, null);
+                                Inventory inventory = null;
+                                if (billingService != null) {
+                                    inventory = billingService.queryInventory(false, null, null);
+                                }
                                 if (inventory != null && !inventory.getAllPurchases().isEmpty()) {
                                     inventoryAppstore[0] = appstore;
                                     Logger.dWithTimeFromUp("inventoryCheck() in ",
@@ -1257,7 +1283,9 @@ public class OpenIabHelper {
             handler.post(new Runnable() {
                 @Override
                 public void run() {
-                    billingService.startSetup(listener);
+                    if (billingService != null) {
+                        billingService.startSetup(listener);
+                    }
                 }
             });
 
@@ -1291,7 +1319,7 @@ public class OpenIabHelper {
         if (setupState != SETUP_RESULT_SUCCESSFUL) {
             throw new IllegalStateException("OpenIabHelper is not set up.");
         }
-        return appStoreBillingService.subscriptionsSupported();
+        return appStoreBillingService != null && appStoreBillingService.subscriptionsSupported();
     }
 
     public void launchPurchaseFlow(Activity act, @NotNull String sku, int requestCode, IabHelper.OnIabPurchaseFinishedListener listener) {
@@ -1316,24 +1344,34 @@ public class OpenIabHelper {
     public void launchPurchaseFlow(Activity act, @NotNull String sku, String itemType, int requestCode,
                                    IabHelper.OnIabPurchaseFinishedListener listener, String extraData) {
         checkSetupDone("launchPurchaseFlow");
-        appStoreBillingService.launchPurchaseFlow(act,
-                SkuManager.getInstance().getStoreSku(appstore.getAppstoreName(), sku),
-                itemType,
-                requestCode,
-                listener,
-                extraData);
+        if (appStoreBillingService != null) {
+            appStoreBillingService.launchPurchaseFlow(act,
+                    SkuManager.getInstance().getStoreSku(appstore.getAppstoreName(), sku),
+                    itemType,
+                    requestCode,
+                    listener,
+                    extraData);
+        }
     }
 
     public boolean handleActivityResult(int requestCode, int resultCode, Intent data) {
         Logger.dWithTimeFromUp("handleActivityResult() requestCode: ", requestCode, " resultCode: ", resultCode, " data: ", data);
         if (requestCode == options.samsungCertificationRequestCode && appStoreInSetup != null) {
-            return appStoreInSetup.getInAppBillingService().handleActivityResult(requestCode, resultCode, data);
+            try {
+                return appStoreInSetup.getInAppBillingService().handleActivityResult(requestCode, resultCode, data);
+            } catch (Exception e) {
+                return false;
+            }
         }
         if (setupState != SETUP_RESULT_SUCCESSFUL) {
             Logger.d("handleActivityResult() setup is not done. requestCode: ", requestCode, " resultCode: ", resultCode, " data: ", data);
             return false;
         }
-        return appStoreBillingService.handleActivityResult(requestCode, resultCode, data);
+        try {
+            return appStoreBillingService.handleActivityResult(requestCode, resultCode, data);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**
@@ -1379,7 +1417,7 @@ public class OpenIabHelper {
         final List<String> moreItemStoreSkus;
         final SkuManager skuManager = SkuManager.getInstance();
         if (moreItemSkus != null) {
-            moreItemStoreSkus = new ArrayList<String>(moreItemSkus.size());
+            moreItemStoreSkus = new ArrayList<>(moreItemSkus.size());
             for (String sku : moreItemSkus) {
                 moreItemStoreSkus.add(skuManager.getStoreSku(appstore.getAppstoreName(), sku));
             }
@@ -1389,7 +1427,7 @@ public class OpenIabHelper {
 
         final List<String> moreSubsStoreSkus;
         if (moreSubsSkus != null) {
-            moreSubsStoreSkus = new ArrayList<String>(moreSubsSkus.size());
+            moreSubsStoreSkus = new ArrayList<>(moreSubsSkus.size());
             for (String sku : moreSubsSkus) {
                 moreSubsStoreSkus.add(skuManager.getStoreSku(appstore.getAppstoreName(), sku));
             }
@@ -1483,7 +1521,7 @@ public class OpenIabHelper {
 
     public void consumeAsync(@NotNull final Purchase purchase,
                              @NotNull final IabHelper.OnConsumeFinishedListener listener) {
-        consumeAsyncInternal(Arrays.asList(purchase), listener, null);
+        consumeAsyncInternal(Collections.singletonList(purchase), listener, null);
     }
 
     public void consumeAsync(@NotNull final List<Purchase> purchases,
@@ -1504,7 +1542,7 @@ public class OpenIabHelper {
         }
         new Thread(new Runnable() {
             public void run() {
-                final List<IabResult> results = new ArrayList<IabResult>();
+                final List<IabResult> results = new ArrayList<>();
                 for (final Purchase purchase : purchases) {
                     try {
                         consume(purchase);
@@ -1587,7 +1625,7 @@ public class OpenIabHelper {
      * Will be removed in version 1.0.
      */
     public static void enableDebugLogging(boolean enabled) {
-        enableDebuglLogging(enabled, null);
+        enableDebugLogging(enabled, null);
     }
 
     /**
@@ -1595,7 +1633,7 @@ public class OpenIabHelper {
      * <p/>
      * Will be removed in version 1.0.
      */
-    public static void enableDebuglLogging(boolean enabled, String tag) {
+    public static void enableDebugLogging(boolean enabled, String tag) {
         Logger.setLogTag(tag);
         Logger.setLoggable(enabled);
     }
@@ -1616,6 +1654,7 @@ public class OpenIabHelper {
      * Contains dev settings for OpenIAB.
      * Create instance of this class via {@link Builder}.
      */
+    @SuppressWarnings("deprecation")
     public static class Options {
 
         /**
@@ -1860,10 +1899,10 @@ public class OpenIabHelper {
          */
         public static final class Builder {
 
-            private final Set<String> preferredStoreNames = new LinkedHashSet<String>();
-            private final Set<Appstore> availableStores = new HashSet<Appstore>();
-            private final Set<String> availableStoresNames = new LinkedHashSet<String>();
-            private final Map<String, String> storeKeys = new HashMap<String, String>();
+            private final Set<String> preferredStoreNames = new LinkedHashSet<>();
+            private final Set<Appstore> availableStores = new HashSet<>();
+            private final Set<String> availableStoresNames = new LinkedHashSet<>();
+            private final Map<String, String> storeKeys = new HashMap<>();
             private boolean checkInventory = false;
             private int samsungCertificationRequestCode
                     = SamsungAppsBillingService.REQUEST_CODE_IS_ACCOUNT_CERTIFICATION;
