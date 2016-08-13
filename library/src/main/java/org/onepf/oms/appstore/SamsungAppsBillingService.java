@@ -16,13 +16,20 @@
 
 package org.onepf.oms.appstore;
 
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import android.app.Activity;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.IBinder;
+import android.os.RemoteException;
+
+import com.sec.android.iap.IAPConnector;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,17 +49,13 @@ import org.onepf.oms.appstore.googleUtils.SkuDetails;
 import org.onepf.oms.util.CollectionUtils;
 import org.onepf.oms.util.Logger;
 
-import android.app.Activity;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
-import android.content.pm.ResolveInfo;
-import android.os.Bundle;
-import android.os.IBinder;
-import android.os.RemoteException;
-
-import com.sec.android.iap.IAPConnector;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * @author Ruslan Sayfutdinov
@@ -158,6 +161,32 @@ public class SamsungAppsBillingService implements AppstoreInAppBillingService {
 
     @Override
     public void startSetup(final OnIabSetupFinishedListener listener) {
+        // Make sure that Samsung IAP service is installed.
+        try {
+            PackageManager pm = activity.getPackageManager();
+            try {
+                pm.getApplicationInfo(SamsungApps.IAP_PACKAGE_NAME, PackageManager.GET_META_DATA);
+            } catch (PackageManager.NameNotFoundException e) {
+                Intent intent = new Intent();
+                intent.setData(Uri.parse("samsungapps://ProductDetail/"
+                        + SamsungApps.IAP_PACKAGE_NAME));
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1) {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | 32);
+                } else {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                }
+                activity.startActivity(intent);
+                Logger.e("Confirming Samsung IAP service exists: " + e.getMessage());
+            }
+        } catch (Exception e1) {
+            Logger.e("Confirming Samsung IAP service exists: " + e1.getMessage());
+            listener.onIabSetupFinished(new IabResult(
+                    IabHelper.BILLING_RESPONSE_RESULT_BILLING_UNAVAILABLE,
+                    "Couldn't find Samsung IAP service on device"));
+            return;
+        }
+
+        // If it got this far then IAP service is installed. Continue with setup.
         this.setupListener = listener;
 
         ComponentName com = new ComponentName(SamsungApps.IAP_PACKAGE_NAME, ACCOUNT_ACTIVITY_NAME);
