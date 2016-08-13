@@ -228,7 +228,7 @@ public class IabHelper implements AppstoreInAppBillingService {
                 Logger.d("Billing service connected.");
                 mService = getServiceFromBinder(service);
                 componentName = name;
-                String packageName = mContext.getPackageName();
+                String packageName = getPackageName();
 
                 final Handler handler = new Handler();
                 flagStartAsync("startSetup");
@@ -237,7 +237,9 @@ public class IabHelper implements AppstoreInAppBillingService {
                         handler.post(new Runnable() {
                             @Override public void run() {
                                 flagEndAsync();
-                                listener.onIabSetupFinished(result);
+                                if (listener != null) {
+                                    listener.onIabSetupFinished(result);
+                                }
                             }
                         });
                     }
@@ -747,6 +749,9 @@ public class IabHelper implements AppstoreInAppBillingService {
     }
 
     public String getPackageName() {
+        if (mContext == null) {
+            return null;
+        }
         return mContext.getPackageName();
     }
 
