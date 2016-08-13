@@ -18,7 +18,11 @@ package org.onepf.oms.appstore.nokiaUtils;
 
 import android.app.Activity;
 import android.app.PendingIntent;
-import android.content.*;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentSender;
+import android.content.ServiceConnection;
 import android.content.pm.ResolveInfo;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -35,7 +39,12 @@ import org.onepf.oms.AppstoreInAppBillingService;
 import org.onepf.oms.OpenIabHelper;
 import org.onepf.oms.SkuManager;
 import org.onepf.oms.appstore.NokiaStore;
-import org.onepf.oms.appstore.googleUtils.*;
+import org.onepf.oms.appstore.googleUtils.IabException;
+import org.onepf.oms.appstore.googleUtils.IabHelper;
+import org.onepf.oms.appstore.googleUtils.IabResult;
+import org.onepf.oms.appstore.googleUtils.Inventory;
+import org.onepf.oms.appstore.googleUtils.Purchase;
+import org.onepf.oms.appstore.googleUtils.SkuDetails;
 import org.onepf.oms.util.CollectionUtils;
 import org.onepf.oms.util.Logger;
 
@@ -111,6 +120,11 @@ public class NokiaStoreHelper implements AppstoreInAppBillingService {
                     Logger.e(e, "Exception: ", e);
 
                     return;
+                } catch (Exception e) {
+                    if (listener != null) {
+                        listener.onIabSetupFinished(new NokiaResult(IabHelper.IABHELPER_REMOTE_EXCEPTION, "Error starting purchaseFlow"));
+                    }
+
                 }
 
                 if (listener != null) {
@@ -144,6 +158,11 @@ public class NokiaStoreHelper implements AppstoreInAppBillingService {
                 mContext.bindService(serviceIntent, mServiceConn, Context.BIND_AUTO_CREATE);
             } catch (SecurityException e) {
                 Logger.e("Can't bind to the service", e);
+                if (listener != null) {
+                    listener.onIabSetupFinished(new NokiaResult(RESULT_BILLING_UNAVAILABLE,
+                            "Billing service unavailable on device due to lack of the permission \"com.nokia.payment.BILLING\"."));
+                }
+            } catch (Exception ignore) {
                 if (listener != null) {
                     listener.onIabSetupFinished(new NokiaResult(RESULT_BILLING_UNAVAILABLE,
                             "Billing service unavailable on device due to lack of the permission \"com.nokia.payment.BILLING\"."));
@@ -218,10 +237,13 @@ public class NokiaStoreHelper implements AppstoreInAppBillingService {
                     mRequestCode = requestCode;
                     mPurchaseListener = listener;
 
-                    final IntentSender intentSender = pendingIntent.getIntentSender();
-                    act.startIntentSenderForResult(
-                            intentSender, requestCode, new Intent(), 0, 0, 0
-                    );
+                    final IntentSender intentSender;
+                    if (pendingIntent != null) {
+                        intentSender = pendingIntent.getIntentSender();
+                        act.startIntentSenderForResult(
+                                intentSender, requestCode, new Intent(), 0, 0, 0
+                        );
+                    }
                 } else if (listener != null) {
                     final IabResult result = new NokiaResult(responseCode, "Failed to get buy intent.");
                     listener.onIabPurchaseFinished(result, null);
@@ -244,7 +266,13 @@ public class NokiaStoreHelper implements AppstoreInAppBillingService {
             if (listener != null) {
                 listener.onIabPurchaseFinished(result, null);
             }
+        } catch (Exception e) {
+            final IabResult result = new NokiaResult(IabHelper.IABHELPER_REMOTE_EXCEPTION,
+                    "Remote exception while starting purchase flow");
 
+            if (listener != null) {
+                listener.onIabPurchaseFinished(result, null);
+            }
         }
     }
 
@@ -371,6 +399,12 @@ public class NokiaStoreHelper implements AppstoreInAppBillingService {
             }
 
             return;
+        } catch (Exception e) {
+            final IabResult result = new NokiaResult(IabHelper.IABHELPER_BAD_RESPONSE, "Failed to parse purchase data.");
+            if (mPurchaseListener != null) {
+                mPurchaseListener.onIabPurchaseFinished(result, null);
+            }
+            return;
         }
 
         if (mPurchaseListener != null) {
@@ -403,9 +437,12 @@ public class NokiaStoreHelper implements AppstoreInAppBillingService {
 
         int response = 0;
         try {
-            response = mService.consumePurchase(3, packageName, productId, token);
+            if (mService != null) {
+                response = mService.consumePurchase(3, packageName, productId, token);
+            }
         } catch (RemoteException e) {
             Logger.e(e, "RemoteException: ", e);
+        } catch (Exception ignore) {
         }
 
         if (response == RESULT_OK) {
@@ -503,6 +540,7 @@ public class NokiaStoreHelper implements AppstoreInAppBillingService {
 
         } catch (RemoteException e) {
             Logger.e(e, "Exception: ", e);
+        } catch (Exception ignore) {
         }
     }
 
@@ -522,6 +560,7 @@ public class NokiaStoreHelper implements AppstoreInAppBillingService {
                 inventory.addPurchase(purchase);
             } catch (JSONException e) {
                 Logger.e(e, "Exception: ", e);
+            } catch (Exception ignore) {
             }
         }
     }
@@ -569,9 +608,7 @@ public class NokiaStoreHelper implements AppstoreInAppBillingService {
 
             processDetailsList(detailsList, inventory);
 
-        } catch (RemoteException e) {
-            Logger.e(e, "Exception: ", e);
-        } catch (JSONException e) {
+        } catch (Exception e) {
             Logger.e(e, "Exception: ", e);
         }
     }
