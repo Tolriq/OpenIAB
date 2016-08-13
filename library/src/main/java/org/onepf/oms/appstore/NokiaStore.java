@@ -33,7 +33,6 @@ import org.onepf.oms.appstore.nokiaUtils.NokiaStoreHelper;
 import org.onepf.oms.util.Logger;
 
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 public class NokiaStore extends DefaultAppstore {
@@ -112,7 +111,6 @@ public class NokiaStore extends DefaultAppstore {
      * @return true if signature matches, false if package is not found or signature does not match.
      */
     private boolean verifyFingerprint() {
-
         try {
             PackageManager pm = context.getPackageManager();
             if (pm == null) {
@@ -134,8 +132,6 @@ public class NokiaStore extends DefaultAppstore {
                     return true;
                 }
             }
-        } catch (NoSuchAlgorithmException | PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
         } catch (Exception ignore) {
         }
         return false;
