@@ -523,7 +523,11 @@ public class OpenIabHelper {
                         } else {
                             final AppstoreInAppBillingService billingService;
                             if ((billingService = appstore.getInAppBillingService()) != null) {
-                                billingService.dispose();
+                                try {
+                                    billingService.dispose();
+                                } catch (Exception e) {
+                                    Logger.e("Error disposing billing service", e);
+                                }
                                 Logger.d("startSetup() billing service disposed for ", appstore.getAppstoreName());
                             }
                         }
@@ -534,7 +538,11 @@ public class OpenIabHelper {
                             for (final Appstore appstore : instantiatedAppstores) {
                                 final AppstoreInAppBillingService billingService;
                                 if ((billingService = appstore.getInAppBillingService()) != null) {
-                                    billingService.dispose();
+                                    try {
+                                        billingService.dispose();
+                                    } catch (Exception e) {
+                                        Logger.e("Error disposing billing service", e);
+                                    }
                                     Logger.d("startSetup() billing service disposed for ", appstore.getAppstoreName());
                                 }
                             }
@@ -884,7 +892,11 @@ public class OpenIabHelper {
         for (final Appstore appstore : appstores) {
             final AppstoreInAppBillingService billingService = appstore.getInAppBillingService();
             if (billingService != null) {
-                billingService.dispose();
+                try {
+                    billingService.dispose();
+                } catch (Exception e) {
+                    Logger.e("Error disposing billing service", e);
+                }
             }
             Logger.d("dispose() was called for ", appstore.getAppstoreName());
         }
@@ -1306,7 +1318,11 @@ public class OpenIabHelper {
     public void dispose() {
         Logger.d("Disposing.");
         if (appStoreBillingService != null) {
-            appStoreBillingService.dispose();
+            try {
+                appStoreBillingService.dispose();
+            } catch (Exception e) {
+                Logger.e("Error disposing billing service", e);
+            }
         }
         appstore = null;
         appStoreBillingService = null;
