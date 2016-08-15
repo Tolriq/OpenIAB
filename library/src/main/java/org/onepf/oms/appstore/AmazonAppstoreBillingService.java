@@ -226,7 +226,7 @@ public class AmazonAppstoreBillingService implements AppstoreInAppBillingService
                 }
                 for (final Receipt receipt : purchaseUpdatesResponse.getReceipts()) {
                     Purchase purchase = getPurchase(receipt);
-                    purchase.setOriginalJson(generateOriginalJson(receipt, userId));
+                    purchase.setOriginalJson(generateOriginalJson(purchaseUpdatesResponse, receipt));
                     inventory.addPurchase(purchase);
                 }
                 if (purchaseUpdatesResponse.hasMore()) {
@@ -442,33 +442,40 @@ public class AmazonAppstoreBillingService implements AppstoreInAppBillingService
     }
 
     /**
-     * Converts receipt to json for transfer with purchase object
+     * Converts purchase response to json for transfer with purchase object
      * <p/>
      * <pre>
      * {
+     * "orderId"           : "purchaseUpdatesResponse.getRequestId"
      * "productId"         : "receipt.getSku"
-     * "purchaseStatus"    : "SUCCESSFUL"
-     * "userId"            : "userId" // can be null
+     * "purchaseStatus"    : "purchaseRequestStatus.name"
+     * "userId"            : "purchaseUpdatesResponse.getUserId()" // if non-null
      * "itemType"          : "receipt.getItemType().name()" // if non-null
-     * "purchaseToken"     : "receipt.purchaseToken"
+     * "purchaseToken"     : "receipt.getReceiptId()"
      * } </pre>
      *
-     * @param receipt The receipt
-     * @param userId  The userId
-     * @return The generated JSON as String
+     * @param purchaseUpdatesResponse Purchase to convert.
+     * @return Generate JSON from purchase.
      */
-    private String generateOriginalJson(Receipt receipt, String userId) {
-        JSONObject json = new JSONObject();
+    private String generateOriginalJson(@NotNull PurchaseUpdatesResponse purchaseUpdatesResponse, @NotNull Receipt receipt) {
+        final JSONObject json = new JSONObject();
         try {
+            json.put(JSON_KEY_ORDER_ID, purchaseUpdatesResponse.getRequestId());
             json.put(JSON_KEY_PRODUCT_ID, receipt.getSku());
-            json.put(JSON_KEY_PURCHASE_STATUS, PurchaseResponse.RequestStatus.SUCCESSFUL.name());
-            json.put(JSON_KEY_USER_ID, userId);
+            final PurchaseUpdatesResponse.RequestStatus requestStatus = purchaseUpdatesResponse.getRequestStatus();
+            if (requestStatus != null) {
+                json.put(JSON_KEY_PURCHASE_STATUS, requestStatus.name());
+            }
+            final UserData userData = purchaseUpdatesResponse.getUserData();
+            if (userData != null) {
+                json.put(JSON_KEY_USER_ID, userData.getUserId());
+            }
             final ProductType productType = receipt.getProductType();
             if (productType != null) {
                 json.put(JSON_KEY_RECEIPT_ITEM_TYPE, productType.name());
             }
             json.put(JSON_KEY_RECEIPT_PURCHASE_TOKEN, receipt.getReceiptId());
-            Logger.d("generateOriginalJson(): JSON\n" + json.toString());
+            Logger.d("generateOriginalJson(): JSON\n", json);
         } catch (JSONException e) {
             Logger.e("generateOriginalJson() failed to generate JSON", e);
         }
