@@ -19,6 +19,8 @@ package org.onepf.oms.appstore;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.amazon.device.iap.PurchasingListener;
 import com.amazon.device.iap.PurchasingService;
@@ -33,8 +35,6 @@ import com.amazon.device.iap.model.RequestId;
 import com.amazon.device.iap.model.UserData;
 import com.amazon.device.iap.model.UserDataResponse;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.onepf.oms.AppstoreInAppBillingService;
@@ -120,7 +120,7 @@ public class AmazonAppstoreBillingService implements AppstoreInAppBillingService
     private IabHelper.OnIabSetupFinishedListener setupListener;
 
 
-    public AmazonAppstoreBillingService(@NotNull Context context) {
+    public AmazonAppstoreBillingService(@NonNull Context context) {
         this.context = context.getApplicationContext();
     }
 
@@ -244,7 +244,7 @@ public class AmazonAppstoreBillingService implements AppstoreInAppBillingService
         }
     }
 
-    @NotNull
+    @NonNull
     private Purchase getPurchase(@Nullable final Receipt receipt) {
         final Purchase purchase = new Purchase(OpenIabHelper.NAME_AMAZON);
         if (receipt == null) {
@@ -273,7 +273,7 @@ public class AmazonAppstoreBillingService implements AppstoreInAppBillingService
     }
 
     @Override
-    public void onProductDataResponse(@NotNull final ProductDataResponse productDataResponse) {
+    public void onProductDataResponse(@NonNull final ProductDataResponse productDataResponse) {
         final ProductDataResponse.RequestStatus status = productDataResponse.getRequestStatus();
         final RequestId requestId = productDataResponse.getRequestId();
         Logger.d("onItemDataResponse() reqStatus: ", status,
@@ -298,8 +298,8 @@ public class AmazonAppstoreBillingService implements AppstoreInAppBillingService
         }
     }
 
-    @NotNull
-    private SkuDetails getSkuDetails(@NotNull final Product product) {
+    @NonNull
+    private SkuDetails getSkuDetails(@NonNull final Product product) {
         final String sku = product.getSku();
         final String price = product.getPrice();
         final String title = product.getTitle();
@@ -336,7 +336,7 @@ public class AmazonAppstoreBillingService implements AppstoreInAppBillingService
     }
 
     @Override
-    public void onPurchaseResponse(@NotNull final PurchaseResponse purchaseResponse) {
+    public void onPurchaseResponse(@NonNull final PurchaseResponse purchaseResponse) {
         final PurchaseResponse.RequestStatus status = purchaseResponse.getRequestStatus();
         final RequestId requestId = purchaseResponse.getRequestId();
         Logger.d("onPurchaseResponse() PurchaseRequestStatus:", status,
@@ -415,7 +415,7 @@ public class AmazonAppstoreBillingService implements AppstoreInAppBillingService
      * @param purchaseResponse Purchase to convert.
      * @return Generate JSON from purchase.
      */
-    private String generateOriginalJson(@NotNull PurchaseResponse purchaseResponse) {
+    private String generateOriginalJson(@NonNull PurchaseResponse purchaseResponse) {
         final JSONObject json = new JSONObject();
         try {
             Receipt receipt = purchaseResponse.getReceipt();
@@ -457,7 +457,7 @@ public class AmazonAppstoreBillingService implements AppstoreInAppBillingService
      * @param purchaseUpdatesResponse Purchase to convert.
      * @return Generate JSON from purchase.
      */
-    private String generateOriginalJson(@NotNull PurchaseUpdatesResponse purchaseUpdatesResponse, @NotNull Receipt receipt) {
+    private String generateOriginalJson(@NonNull PurchaseUpdatesResponse purchaseUpdatesResponse, @NonNull Receipt receipt) {
         final JSONObject json = new JSONObject();
         try {
             json.put(JSON_KEY_ORDER_ID, purchaseUpdatesResponse.getRequestId());

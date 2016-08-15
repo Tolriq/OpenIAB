@@ -20,10 +20,10 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.onepf.oms.Appstore;
 import org.onepf.oms.AppstoreInAppBillingService;
 import org.onepf.oms.DefaultAppstore;
@@ -144,14 +144,14 @@ public class NokiaStore extends DefaultAppstore {
      * @param sku SKU for validate.
      * @throws org.onepf.oms.appstore.nokiaUtils.NokiaSkuFormatException If sku in wrong format for Nokia Store.
      */
-    public static void checkSku(@NotNull String sku) {
+    public static void checkSku(@NonNull String sku) {
         if (!TextUtils.isDigitsOnly(sku)) {
             throw new NokiaSkuFormatException();
         }
     }
 
-    @NotNull
-    private static byte[] hexStringToByteArray(@NotNull String s) {
+    @NonNull
+    private static byte[] hexStringToByteArray(@NonNull String s) {
         int len = s.length();
         byte[] data = new byte[len / 2];
         for (int i = 0; i < len; i += 2) {

@@ -4,9 +4,8 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
-
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Created by krozov on 08.08.14.
@@ -21,7 +20,7 @@ public final class Utils {
      * @param permission The permission to test.
      * @return true if the permission is requested by the application.
      */
-    public static boolean hasRequestedPermission(@NotNull Context context, @NotNull final String permission) {
+    public static boolean hasRequestedPermission(@NonNull Context context, @NonNull final String permission) {
         boolean hasRequestedPermission = false;
         if (TextUtils.isEmpty(permission)) {
             throw new IllegalArgumentException("Permission can't be null or empty.");
@@ -50,7 +49,7 @@ public final class Utils {
      *
      * @return true if the current thread it the UI thread.
      */
-    public static boolean packageInstalled(@NotNull final Context context, @NotNull final String packageName) {
+    public static boolean packageInstalled(@NonNull final Context context, @NonNull final String packageName) {
         final PackageManager packageManager = context.getPackageManager();
         boolean result = false;
         try {
@@ -68,7 +67,7 @@ public final class Utils {
      * @param packageName The package name of the tested application.
      * @return true if the application with the passed package is the installer.
      */
-    public static boolean isPackageInstaller(@NotNull final Context context, final String packageName) {
+    public static boolean isPackageInstaller(@NonNull final Context context, final String packageName) {
         final PackageManager packageManager = context.getPackageManager();
         final String installerPackageName = packageManager.getInstallerPackageName(context.getPackageName());
         boolean isPackageInstaller = TextUtils.equals(installerPackageName, packageName);

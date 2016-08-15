@@ -16,12 +16,6 @@
 
 package org.onepf.oms.appstore;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.onepf.oms.*;
-import org.onepf.oms.appstore.googleUtils.IabHelper;
-import org.onepf.oms.util.Logger;
-
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -29,8 +23,18 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.android.vending.billing.IInAppBillingService;
+
+import org.onepf.oms.Appstore;
+import org.onepf.oms.AppstoreInAppBillingService;
+import org.onepf.oms.DefaultAppstore;
+import org.onepf.oms.IOpenAppstore;
+import org.onepf.oms.IOpenInAppBillingService;
+import org.onepf.oms.appstore.googleUtils.IabHelper;
+import org.onepf.oms.util.Logger;
 
 /**
  * @author Boris Minaev, Oleg Orlov
@@ -57,7 +61,7 @@ public class OpenAppstore extends DefaultAppstore {
     /**
      * @param publicKey - used for signature verification. If <b>null</b> verification is disabled
      */
-    public OpenAppstore(@NotNull final Context context, final String appstoreName, final IOpenAppstore openAppstoreService, @Nullable final Intent billingIntent, String publicKey, final ServiceConnection serviceConn) {
+    public OpenAppstore(@NonNull final Context context, final String appstoreName, final IOpenAppstore openAppstoreService, @Nullable final Intent billingIntent, String publicKey, final ServiceConnection serviceConn) {
         this.context = context;
         this.appstoreName = appstoreName;
         this.openAppstoreService = openAppstoreService;
@@ -174,7 +178,7 @@ public class OpenAppstore extends DefaultAppstore {
         return mBillingService;
     }
 
-    @NotNull
+    @NonNull
     public String toString() {
         return "OpenStore {name: " + appstoreName + ", component: " + componentName + "}";
     }

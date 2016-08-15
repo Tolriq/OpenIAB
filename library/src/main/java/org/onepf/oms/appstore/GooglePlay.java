@@ -16,14 +16,19 @@
 
 package org.onepf.oms.appstore;
 
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.os.IBinder;
+import android.os.RemoteException;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import com.android.vending.billing.IInAppBillingService;
+
 import org.onepf.oms.Appstore;
 import org.onepf.oms.AppstoreInAppBillingService;
 import org.onepf.oms.DefaultAppstore;
@@ -33,15 +38,8 @@ import org.onepf.oms.util.CollectionUtils;
 import org.onepf.oms.util.Logger;
 import org.onepf.oms.util.Utils;
 
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
-import android.content.pm.PackageManager;
-import android.os.IBinder;
-import android.os.RemoteException;
-
-import com.android.vending.billing.IInAppBillingService;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Author: Ruslan Sayfutdinov
@@ -122,7 +120,7 @@ public class GooglePlay extends DefaultAppstore {
                 } catch (RemoteException e) {
                     result[0] = false;
                     Logger.e("isBillingAvailable() RemoteException while setting up in-app billing", e);
-                } catch (Exception e){
+                } catch (Exception e) {
                     result[0] = false;
                     Logger.e("isBillingAvailable() Exception while setting up in-app billing", e);
                 } finally {
@@ -174,7 +172,7 @@ public class GooglePlay extends DefaultAppstore {
         return OpenIabHelper.NAME_GOOGLE;
     }
 
-    private boolean packageExists(@NotNull Context context, String packageName) {
+    private boolean packageExists(@NonNull Context context, String packageName) {
         try {
             context.getPackageManager().getPackageInfo(packageName, 0);
             return true;

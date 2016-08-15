@@ -17,8 +17,7 @@
 package org.onepf.oms;
 
 import android.content.Intent;
-
-import org.jetbrains.annotations.Nullable;
+import android.support.annotation.Nullable;
 
 /**
  * Author: Ruslan Sayfutdinov

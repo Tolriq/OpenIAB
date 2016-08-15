@@ -28,12 +28,12 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
 import com.android.vending.billing.IInAppBillingService;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.json.JSONException;
 import org.onepf.oms.Appstore;
 import org.onepf.oms.AppstoreInAppBillingService;
@@ -183,7 +183,7 @@ public class IabHelper implements AppstoreInAppBillingService {
      *                        is NOT your "developer public key".
      * @param appstore        TODO
      */
-    public IabHelper(@NotNull Context ctx, String base64PublicKey, Appstore appstore) {
+    public IabHelper(@NonNull Context ctx, String base64PublicKey, Appstore appstore) {
         mContext = ctx.getApplicationContext();
         mSignatureBase64 = base64PublicKey;
         this.appstore = appstore;
@@ -410,21 +410,21 @@ public class IabHelper implements AppstoreInAppBillingService {
     @Nullable
     OnIabPurchaseFinishedListener mPurchaseListener;
 
-    public void launchPurchaseFlow(@NotNull Activity act, String sku, int requestCode, OnIabPurchaseFinishedListener listener) {
+    public void launchPurchaseFlow(@NonNull Activity act, String sku, int requestCode, OnIabPurchaseFinishedListener listener) {
         launchPurchaseFlow(act, sku, requestCode, listener, "");
     }
 
-    public void launchPurchaseFlow(@NotNull Activity act, String sku, int requestCode,
+    public void launchPurchaseFlow(@NonNull Activity act, String sku, int requestCode,
                                    OnIabPurchaseFinishedListener listener, String extraData) {
         launchPurchaseFlow(act, sku, ITEM_TYPE_INAPP, requestCode, listener, extraData);
     }
 
-    public void launchSubscriptionPurchaseFlow(@NotNull Activity act, String sku, int requestCode,
+    public void launchSubscriptionPurchaseFlow(@NonNull Activity act, String sku, int requestCode,
                                                OnIabPurchaseFinishedListener listener) {
         launchSubscriptionPurchaseFlow(act, sku, requestCode, listener, "");
     }
 
-    public void launchSubscriptionPurchaseFlow(@NotNull Activity act, String sku, int requestCode,
+    public void launchSubscriptionPurchaseFlow(@NonNull Activity act, String sku, int requestCode,
                                                OnIabPurchaseFinishedListener listener, String extraData) {
         launchPurchaseFlow(act, sku, ITEM_TYPE_SUBS, requestCode, listener, extraData);
     }
@@ -447,7 +447,7 @@ public class IabHelper implements AppstoreInAppBillingService {
      *                    when the purchase completes. This extra data will be permanently bound to that purchase
      *                    and will always be returned when the purchase is queried.
      */
-    public void launchPurchaseFlow(@NotNull Activity act, String sku, @NotNull String itemType, int requestCode,
+    public void launchPurchaseFlow(@NonNull Activity act, String sku, @NonNull String itemType, int requestCode,
                                    @Nullable OnIabPurchaseFinishedListener listener, String extraData) {
         checkSetupDone("launchPurchaseFlow");
         flagStartAsync("launchPurchaseFlow");
@@ -570,7 +570,7 @@ public class IabHelper implements AppstoreInAppBillingService {
         }
     }
 
-    public void processPurchaseSuccess(@NotNull Intent data, @Nullable String purchaseData, @Nullable String dataSignature) {
+    public void processPurchaseSuccess(@NonNull Intent data, @Nullable String purchaseData, @Nullable String dataSignature) {
         IabResult result;
         Logger.d("Successful resultcode from purchase activity.");
         Logger.d("Purchase data: ", purchaseData);
@@ -700,7 +700,7 @@ public class IabHelper implements AppstoreInAppBillingService {
      */
     public void queryInventoryAsync(final boolean querySkuDetails,
                                     final List<String> moreSkus,
-                                    @NotNull final QueryInventoryFinishedListener listener) {
+                                    @NonNull final QueryInventoryFinishedListener listener) {
         final Handler handler = new Handler();
         checkSetupDone("queryInventory");
         flagStartAsync("refresh inventory");
@@ -736,11 +736,11 @@ public class IabHelper implements AppstoreInAppBillingService {
         })).start();
     }
 
-    public void queryInventoryAsync(@NotNull QueryInventoryFinishedListener listener) {
+    public void queryInventoryAsync(@NonNull QueryInventoryFinishedListener listener) {
         queryInventoryAsync(true, null, listener);
     }
 
-    public void queryInventoryAsync(boolean querySkuDetails, @NotNull QueryInventoryFinishedListener listener) {
+    public void queryInventoryAsync(boolean querySkuDetails, @NonNull QueryInventoryFinishedListener listener) {
         queryInventoryAsync(querySkuDetails, null, listener);
     }
 
@@ -758,7 +758,7 @@ public class IabHelper implements AppstoreInAppBillingService {
      * @param itemInfo The PurchaseInfo that represents the item to consume.
      * @throws IabException if there is a problem during consumption.
      */
-    public void consume(@NotNull Purchase itemInfo) throws IabException {
+    public void consume(@NonNull Purchase itemInfo) throws IabException {
         checkSetupDone("consume");
 
         if (!itemInfo.mItemType.equals(ITEM_TYPE_INAPP)) {
@@ -848,7 +848,7 @@ public class IabHelper implements AppstoreInAppBillingService {
      * @param purchases The list of PurchaseInfo objects representing the purchases to consume.
      * @param listener  The listener to notify when the consumption operation finishes.
      */
-    public void consumeAsync(@NotNull List<Purchase> purchases, OnConsumeMultiFinishedListener listener) {
+    public void consumeAsync(@NonNull List<Purchase> purchases, OnConsumeMultiFinishedListener listener) {
         checkSetupDone("consume");
         consumeAsyncInternal(purchases, null, listener);
     }
@@ -914,7 +914,7 @@ public class IabHelper implements AppstoreInAppBillingService {
     }
 
     // Workaround to bug where sometimes response codes come as Long instead of Integer
-    int getResponseCodeFromBundle(@NotNull Bundle b) {
+    int getResponseCodeFromBundle(@NonNull Bundle b) {
         if (b == null) {
             return BILLING_RESPONSE_RESULT_ERROR;
         }
@@ -932,7 +932,7 @@ public class IabHelper implements AppstoreInAppBillingService {
     }
 
     // Workaround to bug where sometimes response codes come as Long instead of Integer
-    int getResponseCodeFromIntent(@NotNull Intent i) {
+    int getResponseCodeFromIntent(@NonNull Intent i) {
         Object o = (i.getExtras() != null) ? i.getExtras().get(RESPONSE_CODE) : null;
         if (o == null) {
             Logger.e("In-app billing error: Intent with no response code, assuming OK (known issue)");
@@ -961,7 +961,7 @@ public class IabHelper implements AppstoreInAppBillingService {
     }
 
 
-    int queryPurchases(@NotNull Inventory inv, String itemType) throws JSONException, RemoteException {
+    int queryPurchases(@NonNull Inventory inv, String itemType) throws JSONException, RemoteException {
         // Query purchases
         Logger.d("Querying owned items, item type: ", itemType);
         Logger.d("Package name: ", getPackageName());
@@ -1030,7 +1030,7 @@ public class IabHelper implements AppstoreInAppBillingService {
      * @param inv      - Inventory with application SKUs
      * @param moreSkus - storeSKUs (processed in {@link OpenIabHelper#queryInventory(boolean, List, List)}
      */
-    int querySkuDetails(String itemType, @NotNull Inventory inv, @Nullable List<String> moreSkus) throws RemoteException, JSONException {
+    int querySkuDetails(String itemType, @NonNull Inventory inv, @Nullable List<String> moreSkus) throws RemoteException, JSONException {
         Logger.d("querySkuDetails() Querying SKU details.");
         final SkuManager skuManager = SkuManager.getInstance();
         final String appstoreName = appstore.getAppstoreName();
@@ -1099,7 +1099,7 @@ public class IabHelper implements AppstoreInAppBillingService {
         return BILLING_RESPONSE_RESULT_OK;
     }
 
-    void consumeAsyncInternal(@NotNull final List<Purchase> purchases,
+    void consumeAsyncInternal(@NonNull final List<Purchase> purchases,
                               @Nullable final OnConsumeFinishedListener singleListener,
                               @Nullable final OnConsumeMultiFinishedListener multiListener) {
         final Handler handler = new Handler();
@@ -1136,7 +1136,7 @@ public class IabHelper implements AppstoreInAppBillingService {
         })).start();
     }
 
-    boolean isValidDataSignature(@Nullable String base64PublicKey, @NotNull String purchaseData, @NotNull String signature) {
+    boolean isValidDataSignature(@Nullable String base64PublicKey, @NonNull String purchaseData, @NonNull String signature) {
         if (base64PublicKey == null) return true;
         boolean isValid = Security.verifyPurchase(base64PublicKey, purchaseData, signature);
         if (!isValid) {

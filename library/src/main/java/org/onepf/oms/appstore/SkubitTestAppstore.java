@@ -17,9 +17,9 @@
 package org.onepf.oms.appstore;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.onepf.oms.AppstoreInAppBillingService;
 import org.onepf.oms.OpenIabHelper;
 import org.onepf.oms.appstore.skubitUtils.SkubitTestIabHelper;
@@ -52,12 +52,12 @@ public class SkubitTestAppstore extends SkubitAppstore {
         return mBillingService;
     }
 
-    @NotNull
+    @NonNull
     public String getInstaller() {
         return SKUBIT_INSTALLER;
     }
 
-    @NotNull
+    @NonNull
     public String getAction() {
         return VENDING_ACTION;
     }

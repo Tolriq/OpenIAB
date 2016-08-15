@@ -1,7 +1,6 @@
 package org.onepf.oms;
 
-import org.intellij.lang.annotations.MagicConstant;
-import org.jetbrains.annotations.NotNull;
+import android.support.annotation.NonNull;
 
 /**
  * Created by krozov on 01.09.14.
@@ -16,9 +15,8 @@ public class SkuMappingException extends IllegalArgumentException {
         super(detailMessage);
     }
 
-    @NotNull
-    public static SkuMappingException newInstance(@MagicConstant(
-            intValues = {REASON_SKU, REASON_STORE_NAME, REASON_STORE_SKU}) int reason) {
+    @NonNull
+    public static SkuMappingException newInstance(int reason) {
         switch (reason) {
             case REASON_SKU:
                 return new SkuMappingException("Sku can't be null or empty value.");

@@ -16,7 +16,7 @@
 
 package org.onepf.oms.appstore.googleUtils;
 
-import org.jetbrains.annotations.NotNull;
+import android.support.annotation.NonNull;
 
 /**
  * Exception thrown when something went wrong with in-app billing.
@@ -27,7 +27,7 @@ import org.jetbrains.annotations.NotNull;
 public class IabException extends Exception {
     IabResult mResult;
 
-    public IabException(@NotNull IabResult r) {
+    public IabException(@NonNull IabResult r) {
         this(r, null);
     }
 
@@ -35,7 +35,7 @@ public class IabException extends Exception {
         this(new IabResult(response, message));
     }
 
-    public IabException(@NotNull IabResult r, Exception cause) {
+    public IabException(@NonNull IabResult r, Exception cause) {
         super(r.getMessage(), cause);
         mResult = r;
     }

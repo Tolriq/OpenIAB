@@ -17,9 +17,8 @@
 package org.onepf.oms;
 
 import android.content.Intent;
-
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 public abstract class DefaultAppstore implements Appstore {
 
@@ -52,7 +51,7 @@ public abstract class DefaultAppstore implements Appstore {
         return null;
     }
 
-    @NotNull
+    @NonNull
     public String toString() {
         return "Store {name: " + getAppstoreName() + "}";
     }

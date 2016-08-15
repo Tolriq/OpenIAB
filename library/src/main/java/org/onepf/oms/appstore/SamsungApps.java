@@ -17,17 +17,15 @@
 package org.onepf.oms.appstore;
 
 import android.app.Activity;
+import android.content.pm.PackageManager;
+import android.content.pm.Signature;
+import android.support.annotation.NonNull;
+import android.text.TextUtils;
 
-import org.jetbrains.annotations.NotNull;
 import org.onepf.oms.Appstore;
 import org.onepf.oms.AppstoreInAppBillingService;
 import org.onepf.oms.DefaultAppstore;
 import org.onepf.oms.OpenIabHelper;
-
-import android.content.pm.PackageManager;
-import android.content.pm.Signature;
-import android.text.TextUtils;
-
 import org.onepf.oms.SkuManager;
 import org.onepf.oms.appstore.googleUtils.IabException;
 import org.onepf.oms.appstore.googleUtils.IabHelper;
@@ -128,7 +126,7 @@ public class SamsungApps extends DefaultAppstore {
         isBillingAvailable = false;
         final CountDownLatch mainLatch = new CountDownLatch(1);
         getInAppBillingService().startSetup(new IabHelper.OnIabSetupFinishedListener() {
-            public void onIabSetupFinished(@NotNull final IabResult result) {
+            public void onIabSetupFinished(@NonNull final IabResult result) {
                 if (result.isSuccess()) {
                     new Thread(new Runnable() {
                         public void run() {
@@ -181,7 +179,7 @@ public class SamsungApps extends DefaultAppstore {
         return OpenIabHelper.NAME_SAMSUNG;
     }
 
-    public static void checkSku(@NotNull String sku) {
+    public static void checkSku(@NonNull String sku) {
         String[] skuParts = sku.split("/");
         if (skuParts.length != 2) {
             throw new SamsungSkuFormatException("Samsung SKU must contain ITEM_GROUP_ID and ITEM_ID.");

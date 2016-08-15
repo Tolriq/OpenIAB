@@ -16,8 +16,8 @@
 
 package org.onepf.oms.appstore.googleUtils;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 /**
  * Represents the result of an in-app billing operation.
@@ -56,7 +56,7 @@ public class IabResult {
         return !isSuccess();
     }
 
-    @NotNull
+    @NonNull
     public String toString() {
         return "IabResult: " + mResponse + ", " + getMessage();
     }

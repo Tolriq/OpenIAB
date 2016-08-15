@@ -16,16 +16,14 @@
 
 package org.onepf.oms.appstore;
 
+import android.content.Context;
+
 import org.onepf.oms.Appstore;
 import org.onepf.oms.AppstoreInAppBillingService;
 import org.onepf.oms.DefaultAppstore;
 import org.onepf.oms.OpenIabHelper;
 import org.onepf.oms.util.Logger;
 import org.onepf.oms.util.Utils;
-
-import android.content.Context;
-
-import com.amazon.device.iap.PurchasingService;
 
 /**
  * Helper class to work with the Amazon Appstore application.

@@ -16,7 +16,7 @@
 
 package org.onepf.oms.util;
 
-import org.jetbrains.annotations.Nullable;
+import android.support.annotation.Nullable;
 
 import java.util.Collection;
 import java.util.Map;

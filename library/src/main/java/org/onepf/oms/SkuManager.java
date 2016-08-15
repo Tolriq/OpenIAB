@@ -16,10 +16,10 @@
 
 package org.onepf.oms;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.onepf.oms.appstore.NokiaStore;
 import org.onepf.oms.appstore.SamsungApps;
 import org.onepf.oms.util.Logger;
@@ -69,8 +69,8 @@ public class SkuManager {
      * @throws org.onepf.oms.SkuMappingException If mapping can't be done.
      * @see #mapSku(String, java.util.Map)
      */
-    @NotNull
-    public SkuManager mapSku(String sku, String storeName, @NotNull String storeSku) {
+    @NonNull
+    public SkuManager mapSku(String sku, String storeName, @NonNull String storeSku) {
         checkSkuMappingParams(sku, storeName, storeSku);
 
         Map<String, String> skuMap = sku2storeSkuMappings.get(storeName);
@@ -97,7 +97,7 @@ public class SkuManager {
         return this;
     }
 
-    private static void checkSkuMappingParams(String storeName, @NotNull String storeSku) {
+    private static void checkSkuMappingParams(String storeName, @NonNull String storeSku) {
         if (TextUtils.isEmpty(storeName)) {
             throw SkuMappingException.newInstance(SkuMappingException.REASON_STORE_NAME);
         }
@@ -115,7 +115,7 @@ public class SkuManager {
         }
     }
 
-    private static void checkSkuMappingParams(String sku, String storeName, @NotNull String storeSku) {
+    private static void checkSkuMappingParams(String sku, String storeName, @NonNull String storeSku) {
         if (TextUtils.isEmpty(sku)) {
             throw SkuMappingException.newInstance(SkuMappingException.REASON_SKU);
         }
@@ -136,7 +136,7 @@ public class SkuManager {
      * @throws org.onepf.oms.SkuMappingException If mapping can't done.
      * @see org.onepf.oms.SkuManager#mapSku(String, String, String)
      */
-    @NotNull
+    @NonNull
     public SkuManager mapSku(String sku, @Nullable Map<String, String> storeSkus) {
         if (storeSkus == null) {
             throw new SkuMappingException("Store skus map can't be null.");
@@ -157,8 +157,8 @@ public class SkuManager {
      * @throws java.lang.IllegalArgumentException When appstoreName or sku param is empty or null value.
      * @see #mapSku(String, String, String)
      */
-    @NotNull
-    public String getStoreSku(@NotNull String appstoreName, @NotNull String sku) {
+    @NonNull
+    public String getStoreSku(@NonNull String appstoreName, @NonNull String sku) {
         if (TextUtils.isEmpty(appstoreName)) {
             throw SkuMappingException.newInstance(SkuMappingException.REASON_STORE_NAME);
         }
@@ -181,8 +181,8 @@ public class SkuManager {
      * @throws java.lang.IllegalArgumentException If the store name or a store SKU is empty or null.
      * @see #mapSku(String, String, String)
      */
-    @NotNull
-    public String getSku(@NotNull String appstoreName, @NotNull String storeSku) {
+    @NonNull
+    public String getSku(@NonNull String appstoreName, @NonNull String storeSku) {
         checkSkuMappingParams(appstoreName, storeSku);
 
         Map<String, String> skuMap = storeSku2skuMappings.get(appstoreName);
@@ -203,7 +203,7 @@ public class SkuManager {
      * @see #mapSku(String, String, String)
      */
     @Nullable
-    public List<String> getAllStoreSkus(@NotNull final String appstoreName) {
+    public List<String> getAllStoreSkus(@NonNull final String appstoreName) {
         if (TextUtils.isEmpty(appstoreName)) {
             throw SkuMappingException.newInstance(SkuMappingException.REASON_STORE_NAME);
         }
@@ -216,7 +216,7 @@ public class SkuManager {
     /**
      * @return the current instance of {@link org.onepf.oms.SkuManager}.
      */
-    @NotNull
+    @NonNull
     public static SkuManager getInstance() {
         return InstanceHolder.SKU_MANAGER;
     }

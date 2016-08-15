@@ -16,8 +16,9 @@
 
 package org.onepf.oms.appstore.googleUtils;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -156,7 +157,7 @@ public class Purchase implements Cloneable {
         return appstoreName;
     }
 
-    @NotNull
+    @NonNull
     @Override
     public String toString() {
         return "PurchaseInfo(type:" + mItemType + "): "

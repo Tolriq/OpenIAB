@@ -16,9 +16,8 @@
 
 package org.onepf.oms.appstore.fortumoUtils;
 
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
-
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Currency;
 import java.util.HashMap;
@@ -49,7 +48,7 @@ public class InappBaseProduct {
     public InappBaseProduct() {
     }
 
-    public InappBaseProduct(@NotNull InappBaseProduct otherProduct) {
+    public InappBaseProduct(@NonNull InappBaseProduct otherProduct) {
         this.published = otherProduct.published;
         this.productId = otherProduct.productId;
         this.baseTitle = otherProduct.baseTitle;
@@ -72,7 +71,7 @@ public class InappBaseProduct {
         return published;
     }
 
-    public void setPublished(@NotNull String published) {
+    public void setPublished(@NonNull String published) {
         if (!published.equals(PUBLISHED) && !published.equals(UNPUBLISHED)) {
             throw new IllegalArgumentException("Wrong \"publish-state\" attr value " + published);
         }
@@ -174,7 +173,7 @@ public class InappBaseProduct {
         }
     }
 
-    @NotNull
+    @NonNull
     protected StringBuilder getValidateInfo() {
         StringBuilder builder = new StringBuilder();
         if (TextUtils.isEmpty(productId)) {
