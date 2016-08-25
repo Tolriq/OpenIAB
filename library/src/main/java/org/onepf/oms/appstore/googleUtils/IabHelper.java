@@ -224,10 +224,12 @@ public class IabHelper implements AppstoreInAppBillingService {
             public void onServiceDisconnected(ComponentName name) {
                 Logger.d("Billing service disconnected.");
                 mService = null;
-                try {
-                    // Try to automatically reconnect to service
-                    mContext.bindService(getServiceIntent(), this, Context.BIND_AUTO_CREATE);
-                } catch (Exception ignore) {
+                if (mSetupDone && !mAsyncInProgress) {
+                    try {
+                        // Try to automatically reconnect to service
+                        mContext.bindService(getServiceIntent(), this, Context.BIND_AUTO_CREATE);
+                    } catch (Exception ignore) {
+                    }
                 }
             }
 
