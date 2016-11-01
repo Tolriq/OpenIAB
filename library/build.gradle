@@ -39,7 +39,7 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: '*.jar')
-    compile 'com.android.support:support-annotations:24.1.1'
+    compile 'com.android.support:support-annotations:25.0.0'
     provided 'com.amazon:in-app-purchasing:2.0.61'
     provided 'com.braintree:fortumo-in-app:9.1.2'
 }
