@@ -240,23 +240,25 @@ public class IabHelper implements AppstoreInAppBillingService {
                 componentName = name;
                 String packageName = getPackageName();
 
-                final Handler handler = new Handler();
-                flagStartAsync("startSetup");
-                startSetupIabAsync(packageName, new OnIabSetupFinishedListener() {
-                    @Override
-                    public void onIabSetupFinished(final IabResult result) {
-                        handler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                flagEndAsync();
-                                if (listener != null && mFirstConnection) {
-                                    listener.onIabSetupFinished(result);
+                if (!mAsyncInProgress) {
+                    final Handler handler = new Handler();
+                    flagStartAsync("startSetup");
+                    startSetupIabAsync(packageName, new OnIabSetupFinishedListener() {
+                        @Override
+                        public void onIabSetupFinished(final IabResult result) {
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    flagEndAsync();
+                                    if (listener != null && mFirstConnection) {
+                                        listener.onIabSetupFinished(result);
+                                    }
+                                    mFirstConnection = false;
                                 }
-                                mFirstConnection = false;
-                            }
-                        });
-                    }
-                });
+                            });
+                        }
+                    });
+                }
             }
         };
 
