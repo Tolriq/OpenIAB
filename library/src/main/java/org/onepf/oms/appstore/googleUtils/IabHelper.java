@@ -323,7 +323,7 @@ public class IabHelper implements AppstoreInAppBillingService {
                     }
 
                     mSetupDone = true;
-                } catch (RemoteException e) {
+                } catch (Exception e) {
                     if (listener != null) {
                         listener.onIabSetupFinished(new IabResult(IABHELPER_REMOTE_EXCEPTION,
                                 "RemoteException while setting up in-app billing."));
