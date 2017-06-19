@@ -337,7 +337,7 @@ public class IabHelper implements AppstoreInAppBillingService {
                     Logger.d("Setup successful.");
                 }
             }
-        }).start();
+        }, "OpenIABGSetup").start();
     }
 
     /**
@@ -708,7 +708,7 @@ public class IabHelper implements AppstoreInAppBillingService {
         final Handler handler = new Handler();
         checkSetupDone("queryInventory");
         flagStartAsync("refresh inventory");
-        (new Thread(new Runnable() {
+        new Thread(new Runnable() {
             public void run() {
                 IabResult result = new IabResult(BILLING_RESPONSE_RESULT_OK, "Inventory refresh successful.");
                 Inventory inv = null;
@@ -737,7 +737,7 @@ public class IabHelper implements AppstoreInAppBillingService {
                     });
                 }
             }
-        })).start();
+        }, "OpenIABGQuery").start();
     }
 
     public void queryInventoryAsync(@NonNull QueryInventoryFinishedListener listener) {
@@ -1108,7 +1108,7 @@ public class IabHelper implements AppstoreInAppBillingService {
                               @Nullable final OnConsumeMultiFinishedListener multiListener) {
         final Handler handler = new Handler();
         flagStartAsync("consume");
-        (new Thread(new Runnable() {
+        new Thread(new Runnable() {
             public void run() {
                 final List<IabResult> results = new ArrayList<IabResult>();
                 for (Purchase purchase : purchases) {
@@ -1137,7 +1137,7 @@ public class IabHelper implements AppstoreInAppBillingService {
                     });
                 }
             }
-        })).start();
+        }, "OpenIABGConsume").start();
     }
 
     boolean isValidDataSignature(@Nullable String base64PublicKey, @NonNull String purchaseData, @NonNull String signature) {

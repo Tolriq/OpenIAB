@@ -1514,7 +1514,7 @@ public class OpenIabHelper {
                     }
                 });
             }
-        }).start();
+        }, "OpenIABQuery").start();
     }
 
     public void consume(@NonNull Purchase purchase) throws IabException {
@@ -1583,7 +1583,7 @@ public class OpenIabHelper {
                     });
                 }
             }
-        }).start();
+        }, "OpenIABConsume").start();
     }
 
     // Checks that setup was done; if not, throws an exception.
