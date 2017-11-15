@@ -39,7 +39,7 @@ android {
 }
 
 dependencies {
-    compile project(':OpenIab Library')
-    compile 'com.braintree:fortumo-in-app:9.1.2'
-    compile 'com.amazon:in-app-purchasing:2.0.61'
+    implementation project(':openiab')
+    implementation 'com.braintree:fortumo-in-app:9.1.2'
+    implementation 'com.amazon:in-app-purchasing:2.0.61'
 }

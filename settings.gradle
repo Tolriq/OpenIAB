@@ -1,5 +1,5 @@
-include ':OpenIab Library'
-include ':Trivial Drive Sample'
+include ':openiab'
+include ':sample'
 
-project(':Trivial Drive Sample').projectDir = file('samples/trivialdrive')
-project(':OpenIab Library').projectDir = file('library')
+project(':sample').projectDir = file('samples/trivialdrive')
+project(':openiab').projectDir = file('library')
