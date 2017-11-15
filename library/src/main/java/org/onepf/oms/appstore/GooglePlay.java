@@ -55,6 +55,7 @@ public class GooglePlay extends DefaultAppstore {
     private Context context;
     private IabHelper mBillingService;
     private String publicKey;
+    private ServiceConnection serviceConnection;
     @Nullable
     private volatile Boolean billingAvailable = null; // undefined until isBillingAvailable() is called
 
@@ -111,26 +112,32 @@ public class GooglePlay extends DefaultAppstore {
 
         final CountDownLatch latch = new CountDownLatch(1);
         final boolean[] result = new boolean[1];
-        final ServiceConnection serviceConnection = new ServiceConnection() {
+        serviceConnection = new ServiceConnection() {
             public void onServiceConnected(ComponentName name, IBinder service) {
                 final IInAppBillingService mService = IInAppBillingService.Stub.asInterface(service);
                 try {
-                    final int response = mService.isBillingSupported(3, packageName, IabHelper.ITEM_TYPE_INAPP);
-                    result[0] = response == IabHelper.BILLING_RESPONSE_RESULT_OK;
-                } catch (RemoteException e) {
-                    result[0] = false;
-                    Logger.e("isBillingAvailable() RemoteException while setting up in-app billing", e);
+                    new Thread(() -> {
+                        try {
+                            final int response = mService.isBillingSupported(3, packageName, IabHelper.ITEM_TYPE_INAPP);
+                            result[0] = response == IabHelper.BILLING_RESPONSE_RESULT_OK;
+                        } catch (RemoteException e) {
+                            result[0] = false;
+                            Logger.e("isBillingAvailable() RemoteException while setting up in-app billing", e);
+                        } catch (Exception e) {
+                            result[0] = false;
+                            Logger.e("isBillingAvailable() Exception while setting up in-app billing", e);
+                        } finally {
+                            latch.countDown();
+                            unbind();
+                        }
+                        Logger.d("isBillingAvailable() Google Play result: ", result[0]);
+                    }).start();
                 } catch (Exception e) {
                     result[0] = false;
                     Logger.e("isBillingAvailable() Exception while setting up in-app billing", e);
-                } finally {
                     latch.countDown();
-                    try {
-                        context.unbindService(this);
-                    } catch (Exception ignore) {
-                    }
+                    unbind();
                 }
-                Logger.d("isBillingAvailable() Google Play result: ", result[0]);
             }
 
             public void onServiceDisconnected(ComponentName name) {/*do nothing*/}
@@ -152,6 +159,15 @@ public class GooglePlay extends DefaultAppstore {
             return false;
         }
         return (billingAvailable = result[0]);
+    }
+
+    private void unbind() {
+        if (serviceConnection != null && context != null) {
+            try {
+                context.unbindService(serviceConnection);
+            } catch (Exception ignore) {
+            }
+        }
     }
 
     @Override
